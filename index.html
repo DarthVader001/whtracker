@@ -600,9 +600,8 @@
         <table id="wh-table">
           <thead>
             <tr>
-              <th onclick="sortBy('_whName')"     data-col="_whName">Dispatch WH <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('dispWh')"        data-col="dispWh">Dispatch WH <span class="sort-icon">↕</span></th>
               <th onclick="sortBy('channel')"      data-col="channel">Channel <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('location')"     data-col="location">Location <span class="sort-icon">↕</span></th>
               <th onclick="sortBy('poName')"       data-col="poName">PO Name <span class="sort-icon">↕</span></th>
               <th onclick="sortBy('emailSubject')" data-col="emailSubject">Email Subject <span class="sort-icon">↕</span></th>
               <th onclick="sortBy('gpDate')"       data-col="gpDate">GP Received <span class="sort-icon">↕</span></th>
@@ -620,7 +619,7 @@
             </tr>
           </thead>
           <tbody id="wh-tbody">
-            <tr><td colspan="17" class="center-msg"><div class="spinner"></div>Loading warehouse data…</td></tr>
+            <tr><td colspan="16" class="center-msg"><div class="spinner"></div>Loading warehouse data…</td></tr>
           </tbody>
         </table>
       </div>
@@ -651,52 +650,94 @@ const OAUTH_CLIENT_ID = "463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.goog
 // For each header, we lowercase + trim it, then check if it STARTS WITH any of the keys.
 // Order matters — more specific prefixes should come first.
 const PREFIX_MAP = [
-  // Identification
+  // Serial number — many variants
+  { prefix: "serial no",        key: "srNo" },
+  { prefix: "sl no",            key: "srNo" },
   { prefix: "sr no",            key: "srNo" },
   { prefix: "sr.",              key: "srNo" },
+  // SI alone (some sheets use it as serial; skip if it maps to something useful)
+  // Channel
   { prefix: "channel name",     key: "channel" },
+  { prefix: "channel.",         key: "channel" },
   { prefix: "channel",          key: "channel" },
+  // Location — "party location", "location", etc.
+  { prefix: "party location",   key: "location" },
   { prefix: "location",         key: "location" },
+  // Email / PO identity
   { prefix: "email subject",    key: "emailSubject" },
   { prefix: "email",            key: "emailSubject" },
   { prefix: "po name",          key: "poName" },
   { prefix: "po no",            key: "poName" },
   { prefix: "po number",        key: "poName" },
-  // Gatepass
-  { prefix: "gatepass received on", key: "gpDate" },
-  { prefix: "gatepass received",    key: "gpDate" },
-  { prefix: "gatepass no",     key: "gpNo" },
-  { prefix: "gatepass type",   key: "gpType" },
-  { prefix: "gatepass",        key: "gpNo" },
-  // Quantities (prefix match — handles "units 1405362" etc.)
-  { prefix: "units",           key: "units" },
-  { prefix: "packed/ dispatch qty", key: "packedQty" },
-  { prefix: "packed/dispatch qty",  key: "packedQty" },
-  { prefix: "packed qty",      key: "packedQty" },
-  { prefix: "disp qty",        key: "packedQty" },
-  { prefix: "boxes",           key: "boxes" },
-  { prefix: "bar coding",      key: "barcodingQty" },
-  { prefix: "barcoding",       key: "barcodingQty" },
-  { prefix: "combo set",       key: "comboQty" },
+  // Gatepass / Picklist — more specific first
+  { prefix: "gatepass no./picklist no", key: "gpNo" },
+  { prefix: "gatepass no./picklist",    key: "gpNo" },
+  { prefix: "gatepass received on",     key: "gpDate" },
+  { prefix: "gatepass received",        key: "gpDate" },
+  { prefix: "gatepass no.",      key: "gpNo" },
+  { prefix: "gatepass no",       key: "gpNo" },
+  { prefix: "gatepass type",     key: "gpType" },
+  { prefix: "gatepass",          key: "gpNo" },
+  { prefix: "picklist/gp date",  key: "gpDate" },
+  { prefix: "picklist status",   key: "picklistStatus" },
+  { prefix: "picklist assign",   key: "picklistAssign" },
+  // Invoice
+  { prefix: "invoice number",    key: "invoiceNo" },
+  { prefix: "invoice no",        key: "invoiceNo" },
+  { prefix: "inv date",          key: "invoiceDate" },
+  { prefix: "inv value",         key: "invoiceValue" },
+  // Quantities — prefix handles running totals like "Units 1405362"
+  { prefix: "units",             key: "units" },
+  { prefix: "qty",               key: "units" },
+  { prefix: "packed/ dispatch  qty", key: "packedQty" },
+  { prefix: "packed/ dispatch qty",  key: "packedQty" },
+  { prefix: "packed/dispatch qty",   key: "packedQty" },
+  { prefix: "packed qty",        key: "packedQty" },
+  { prefix: "disp qty",          key: "packedQty" },
+  { prefix: "close qty",         key: "closeQty" },
+  // Boxes — "no. of box", "boxes"
+  { prefix: "no. of box",        key: "boxes" },
+  { prefix: "no. of boxes",      key: "boxes" },
+  { prefix: "boxes",             key: "boxes" },
+  // Barcoding / Combo
+  { prefix: "bar coding",        key: "barcodingQty" },
+  { prefix: "barcoding qty",     key: "barcodingQty" },
+  { prefix: "barcoding",         key: "barcodingQty" },
+  { prefix: "combo set qty",     key: "comboQty" },
+  { prefix: "combo set",         key: "comboQty" },
   // Scheduling
-  { prefix: "targeted pickup", key: "targetedPickup" },
-  { prefix: "target pickup",   key: "targetedPickup" },
-  { prefix: "priority level",  key: "priority" },
-  { prefix: "priority",        key: "priority" },
-  // Status
-  { prefix: "packing status",  key: "packingStatus" },
-  { prefix: "status",          key: "status" },
+  { prefix: "targeted pickup date (eta)", key: "targetedPickup" },
+  { prefix: "targeted pickup date",       key: "targetedPickup" },
+  { prefix: "targeted pickup",    key: "targetedPickup" },
+  { prefix: "target pickup",      key: "targetedPickup" },
+  { prefix: "priority level",     key: "priority" },
+  { prefix: "priority",           key: "priority" },
+  // Status — packing before plain status
+  { prefix: "packing status",     key: "packingStatus" },
+  { prefix: "re-check status",    key: "recheckStatus" },
+  { prefix: "status",             key: "status" },
   // Dates
-  { prefix: "rtd date",        key: "rtdDate" },
-  { prefix: "dispatch date",   key: "dispatchDate" },
-  // Delivery
-  { prefix: "delivery partner", key: "deliveryPartner" },
-  { prefix: "lr",              key: "lr" },
-  // Misc
-  { prefix: "additional activity", key: "remarks" },
-  { prefix: "remarks",         key: "remarks" },
-  { prefix: "start time",      key: "startTime" },
-  { prefix: "end time",        key: "endTime" },
+  { prefix: "rtd date",           key: "rtdDate" },
+  { prefix: "dispatch date",      key: "dispatchDate" },
+  // Delivery / tracking
+  { prefix: "delivery partner",   key: "deliveryPartner" },
+  { prefix: "tracking id",        key: "lr" },
+  { prefix: "tracking no",        key: "lr" },
+  { prefix: "lr",                 key: "lr" },
+  // Misc / remarks
+  { prefix: "additional activity", key: "activityRemarks" },
+  { prefix: "remaks",             key: "remarks" },
+  { prefix: "remarks",            key: "remarks" },
+  { prefix: "start time",         key: "startTime" },
+  { prefix: "end time",           key: "endTime" },
+  { prefix: "duration in min",    key: "durationMin" },
+  { prefix: "duration in hour",   key: "durationHr" },
+  { prefix: "duration bucket",    key: "durationBucket" },
+  { prefix: "duration",           key: "durationMin" },
+  { prefix: "aging",              key: "aging" },
+  { prefix: "orders cutoff",      key: "ordersCutoff" },
+  { prefix: "gate pass update",   key: "gpUpdate" },
+  { prefix: "include in pivot",   key: "inPivot" },
 ];
 
 function mapHeader(rawHeader) {
@@ -788,7 +829,7 @@ function showSetup() {
   document.getElementById("setup-screen").style.display = "block";
   document.getElementById("app").style.display = "none";
   const config = loadConfig();
-  const existing = config ? config.sheets : [{ id: "", tab: "", name: "" }];
+  const existing = config ? config.sheets : [{ id: "", tab: "", name: "", headerRow: 1 }];
   existing.forEach(s => addSheetEntry(s.id, s.tab, s.name, s.headerRow || 1));
 }
 
@@ -798,14 +839,17 @@ function openSetup() {
 }
 
 let entryCount = 0;
-function addSheetEntry(id = "", tab = "", name = "", headerRow = 1) {
+function addSheetEntry(id, tab, name, headerRow) {
+  id = id || ""; tab = tab || ""; name = name || ""; headerRow = headerRow || 1;
   entryCount++;
-  const hrow = parseInt(headerRow) || 1;
+  const n = entryCount;
+  const opt1 = headerRow == 1 ? " selected" : "";
+  const opt2 = headerRow == 2 ? " selected" : "";
   const d = document.createElement("div");
   d.className = "sheet-entry";
   d.innerHTML = `
     <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${entryCount}</span>
+      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${n}</span>
       <button class="btn-remove" onclick="this.closest('.sheet-entry').remove()">×</button>
     </div>
     <div>
@@ -816,15 +860,15 @@ function addSheetEntry(id = "", tab = "", name = "", headerRow = 1) {
       <label>Tab name (exact)</label>
       <input type="text" class="se-tab" value="${tab}" placeholder="WH Mumbai">
     </div>
-    <div style="grid-column:1/-1;">
-      <label>Friendly name (optional — used as Dispatch WH label)</label>
+    <div>
+      <label>Friendly name (optional)</label>
       <input type="text" class="se-name" value="${name}" placeholder="e.g. Mumbai WH">
     </div>
     <div>
       <label>Header row</label>
-      <select class="se-hrow" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;">
-        <option value="1" ${hrow==1?"selected":""}>Row 1 — headers on first row</option>
-        <option value="2" ${hrow==2?"selected":""}>Row 2 — row 1 is title/merge</option>
+      <select class="se-hrow" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;cursor:pointer;">
+        <option value="1"${opt1}>Row 1 — headers on first row</option>
+        <option value="2"${opt2}>Row 2 — row 1 is a title/merge row</option>
       </select>
     </div>
   `;
@@ -836,11 +880,11 @@ function saveAndLoad() {
   const sheets = [];
   let valid = true;
   entries.forEach(e => {
-    const id        = e.querySelector(".se-id").value.trim();
-    const tab       = e.querySelector(".se-tab").value.trim();
-    const name      = e.querySelector(".se-name").value.trim();
-    const headerRow = parseInt(e.querySelector(".se-hrow").value) || 1;
-    if (id && tab) sheets.push({ id, tab, name: name || tab, headerRow });
+    const id   = e.querySelector(".se-id").value.trim();
+    const tab  = e.querySelector(".se-tab").value.trim();
+    const name = e.querySelector(".se-name").value.trim();
+    const hrow = parseInt(e.querySelector(".se-hrow").value) || 1;
+    if (id && tab) sheets.push({ id, tab, name: name || tab, headerRow: hrow });
     else if (id || tab) valid = false;
   });
   if (!valid) { showSetupError("Fill in both Sheet ID and Tab for each row, or remove incomplete rows."); return; }
@@ -899,19 +943,20 @@ async function fetchSheet(sheet) {
   if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || `HTTP ${res.status}`); }
   const data = await res.json();
   const rows = data.values || [];
-  // Use per-sheet headerRow config (1 = headers on row 1, 2 = headers on row 2 with title row above)
-  const hrow = parseInt(sheet.headerRow) || 1;
-  if (rows.length < hrow) return [];
+  // headerRow is 1-based: 1 = headers on row 1, 2 = headers on row 2 (row 1 is title/merge)
+  const hIdx = (sheet.headerRow || 1) - 1; // convert to 0-based index
+  const minRows = hIdx + 2; // need at least header row + 1 data row
+  if (rows.length < minRows) return [];
 
-  const rawHeaders = rows[hrow - 1]; // header row (0-indexed)
+  const rawHeaders = rows[hIdx];
   const mappedKeys = rawHeaders.map(mapHeader);
-  const dataStartIdx = hrow; // data starts immediately after header row
 
-  return rows.slice(dataStartIdx).map((row, i) => { // data rows
-    const obj = { _whName: sheet.name, _rowIndex: i + hrow + 1 };
+  return rows.slice(hIdx + 1).map((row, i) => {
+    const obj = { _whName: sheet.name, _rowIndex: i + hIdx + 2 };
     mappedKeys.forEach((key, ci) => { obj[key] = row[ci] || ""; });
 
-    obj.channel        = obj.channel || sheet.name;
+    obj.dispWh         = sheet.name;  // Dispatch WH = the friendly name from setup
+    obj.channel        = obj.channel || "";
     obj.gpDate         = normaliseDate(obj.gpDate);
     obj.rtdDate        = normaliseDate(obj.rtdDate);
     obj.dispatchDate   = normaliseDate(obj.dispatchDate);
@@ -1005,12 +1050,12 @@ function populateFilters() {
   const channels = [...new Set(allRows.map(r => r.channel).filter(Boolean))].sort();
   const pstatuses = [...new Set(allRows.map(r => r.packingStatus).filter(Boolean))].sort();
   const dstatuses = [...new Set(allRows.map(r => r.status).filter(Boolean))].sort();
-  const whNames = [...new Set(allRows.map(r => r._whName).filter(Boolean))].sort();
+  const whs = [...new Set(allRows.map(r => r.dispWh).filter(Boolean))].sort();
 
   buildMsOptions("channel", channels);
   buildMsOptions("pstatus", pstatuses);
   buildMsOptions("dstatus", dstatuses);
-  buildMsOptions("wh", whNames);
+  buildMsOptions("wh", whs);
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -1036,11 +1081,11 @@ function applyFilters() {
     if (selChannels.size  > 0 && !selChannels.has(r.channel))  return false;
     if (selPStatuses.size > 0 && !selPStatuses.has((r.packingStatus || "").toLowerCase())) return false;
     if (selDStatuses.size > 0 && !selDStatuses.has((r.status || "").toLowerCase())) return false;
-    if (selWhs.size       > 0 && !selWhs.has(r._whName))       return false;
+    if (selWhs.size       > 0 && !selWhs.has(r.dispWh))        return false;
     if (gpFrom && r.gpDate && r.gpDate < gpFrom) return false;
     if (gpTo   && r.gpDate && r.gpDate > gpTo)   return false;
     if (search) {
-      const hay = [r.poName, r.emailSubject, r.gpNo, r.lr, r.channel, r.location, r.deliveryPartner, r.status, r.packingStatus].join(" ").toLowerCase();
+      const hay = [r.poName, r.emailSubject, r.gpNo, r.lr, r.channel, r.dispWh, r.location, r.deliveryPartner, r.status, r.packingStatus].join(" ").toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
@@ -1118,7 +1163,7 @@ function renderTable() {
   const page  = filteredRows.slice(start, start + PAGE_SIZE);
 
   if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="17" class="center-msg">No rows match your filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="16" class="center-msg">No rows match your filters.</td></tr>`;
     document.getElementById("row-count").textContent = "0 rows";
     renderPagination();
     return;
@@ -1130,9 +1175,8 @@ function renderTable() {
     const over = isOverdue(r);
     const hasPriority = !!(r.priority && r.priority.trim());
     return `<tr class="${over ? "overdue" : hasPriority ? "priority" : ""}" onclick="showDetail(${start + i})" style="cursor:pointer;">
-      <td style="font-weight:600;color:var(--accent);font-family:'DM Mono',monospace;">${esc(r._whName)}</td>
-      <td><span class="channel-pill">${esc(r.channel)}</span></td>
-      <td>${esc(r.location)}</td>
+      <td><span class="channel-pill">${esc(r.dispWh)}</span></td>
+      <td><span class="channel-pill" style="background:var(--surface2);">${esc(r.channel)}</span></td>
       <td style="font-weight:600; font-family:'DM Mono',monospace;">${esc(r.poName)}</td>
       <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.emailSubject)}">${esc(r.emailSubject)}</td>
       <td>${esc(displayDate(r.gpDate))}</td>
@@ -1208,6 +1252,7 @@ function showDetail(idx) {
   if (!r) return;
   document.getElementById("modal-po-name").textContent = r.poName || r.gpNo || "Row Details";
   const fields = [
+    ["Dispatch WH",      r.dispWh],
     ["Channel",          r.channel],
     ["Location",         r.location],
     ["PO Name",          r.poName],
@@ -1248,7 +1293,7 @@ function closeModal(e) {
 //  EXPORT
 // ═══════════════════════════════════════
 function exportCSV() {
-  const cols = ["channel","location","poName","emailSubject","gpDate","gpNo","gpType","units","targetedPickup","priority","packingStatus","status","rtdDate","dispatchDate","packedQty","boxes","deliveryPartner","lr","remarks"];
+  const cols = ["dispWh","channel","location","poName","emailSubject","gpDate","gpNo","gpType","units","targetedPickup","priority","packingStatus","status","rtdDate","dispatchDate","packedQty","boxes","deliveryPartner","lr","remarks"];
   const dateFields = new Set(["gpDate","rtdDate","dispatchDate","targetedPickup"]);
   const header = cols.join(",");
   const rowsData = filteredRows.map(r => cols.map(c => {
