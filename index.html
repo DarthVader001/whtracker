@@ -213,7 +213,7 @@
     <div class="icon">🏭</div>
     <h2>WH Tracker Dashboard</h2>
     <p>Sign in with your Google account to connect your warehouse sheets and view live dispatch data.</p>
-    <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleCredential" data-auto_prompt="false"></div>
+    <div id="g_id_onload" data-client_id="463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com" data-callback="handleCredential" data-auto_prompt="false"></div>
     <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
   </div>
 </div>
@@ -306,7 +306,7 @@
 // ─────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_ID = '463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 
 let accessToken = null;
@@ -432,44 +432,31 @@ function priorityBadge(v) {
 // GOOGLE AUTH
 // ─────────────────────────────────────────────────────────
 function handleCredential(response) {
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
-  document.getElementById('userName').textContent = payload.name;
-  document.getElementById('userAvatar').src = payload.picture;
-  document.getElementById('userInfo').style.display = 'flex';
+  // Redirect to Google OAuth for access token (same flow as PO tracker)
+  const redirectUri = window.location.href.split('?')[0].split('#')[0];
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(SCOPES)}`;
+  window.location.href = authUrl;
+}
 
-  // Exchange ID token for access token via OAuth2 implicit flow
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: window.location.origin + window.location.pathname,
-    response_type: 'token',
-    scope: SCOPES,
-    prompt: 'consent',
-  });
-  const popup = window.open(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 'oauth', 'width=500,height=600');
-  const timer = setInterval(() => {
-    try {
-      const url = popup.location.href;
-      if (url.includes('access_token')) {
-        clearInterval(timer);
-        popup.close();
-        const hash = new URLSearchParams(popup.location.hash.substring(1));
-        accessToken = hash.get('access_token');
-        afterAuth();
-      }
-    } catch(e) {}
-    if (popup.closed) clearInterval(timer);
-  }, 500);
+function checkOAuthCallback() {
+  const hash = window.location.hash;
+  if (hash.includes('access_token=')) {
+    const params = new URLSearchParams(hash.replace('#', '?').slice(1));
+    accessToken = params.get('access_token');
+    window.history.replaceState({}, '', window.location.pathname);
+    afterAuth();
+    return true;
+  }
+  return false;
 }
 
 function afterAuth() {
   document.getElementById('authScreen').style.display = 'none';
-  loadConfig();
+  renderSetup();
   const sheets = getSavedSheets();
   if (sheets.length > 0) {
-    renderSetup();
     loadAll();
   } else {
-    renderSetup();
     document.getElementById('setupScreen').style.display = 'block';
   }
 }
@@ -830,6 +817,9 @@ function toast(msg, duration = 3000) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', duration);
 }
+
+// ── INIT ──
+checkOAuthCallback();
 </script>
 </body>
 </html>
