@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WH Tracker Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f11;
+    --surface: #17171a;
+    --surface2: #1e1e22;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8e4;
+    --muted: #6b6b72;
+    --radius: 10px;
+    --accent: #c8f06a;
+    --accent-dim: rgba(200,240,106,0.12);
+    --accent-text: #8aaa2a;
+    --amber: #f0b429; --amber-bg: rgba(240,180,41,0.12); --amber-text: #c8940f;
+    --blue: #5b9cf6; --blue-bg: rgba(91,156,246,0.12); --blue-text: #4a80d4;
+    --red: #f06a6a; --red-bg: rgba(240,106,106,0.12); --red-text: #c84a4a;
+    --green: #6af0a0; --green-bg: rgba(106,240,160,0.12); --green-text: #3ab870;
+    --purple: #b48af0; --purple-bg: rgba(180,138,240,0.12); --purple-text: #9068d4;
+    --orange: #f0a06a; --orange-bg: rgba(240,160,106,0.12); --orange-text: #c8784a;
+    --teal: #6ae0f0; --teal-bg: rgba(106,224,240,0.12); --teal-text: #3ab8c8;
+  }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(200,240,106,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 10% 80%, rgba(91,156,246,0.04) 0%, transparent 60%);
+  }
+
+  /* ── AUTH ── */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .auth-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 360px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .auth-card .brand { font-size: 32px; margin-bottom: 1rem; }
+  .auth-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .auth-card p { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; line-height: 1.6; font-family: 'DM Mono', monospace; }
+
+  /* ── SETUP ── */
+  #setup-screen { display: none; max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+  #setup-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+  #setup-screen p { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; line-height: 1.6; font-family: 'DM Mono', monospace; }
+  .sheet-entry {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .sheet-entry input {
+    width: 100%; padding: 7px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+  .sheet-entry input:focus { outline: none; border-color: var(--accent); }
+  .sheet-entry input::placeholder { color: var(--muted); }
+  .sheet-entry label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+  .btn-add {
+    background: none;
+    border: 0.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 0.65rem;
+    width: 100%;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-add:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+  .btn-primary {
+    background: var(--accent);
+    color: #0f0f11;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; float: right; }
+  .tip {
+    background: var(--blue-bg);
+    border: 0.5px solid rgba(91,156,246,0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 12px;
+    color: var(--blue-text);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── HEADER ── */
+  #app { display: none; }
+  header {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 1.5rem;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-brand { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .header-brand span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn-sm {
+    background: none;
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { background: var(--surface2); border-color: var(--accent); }
+  .btn-export {
+    background: var(--accent-dim);
+    border: 0.5px solid rgba(200,240,106,0.25);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-export:hover { background: rgba(200,240,106,0.2); }
+
+  main { max-width: 1500px; margin: 0 auto; padding: 1.25rem 1.5rem; }
+
+  /* ── STAT CARDS ── */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .stat {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat:hover { border-color: var(--border2); }
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.amber  { color: var(--amber); }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.blue   { color: var(--blue); }
+  .stat-value.green  { color: var(--green); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+  .stat-dot {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+
+  /* ── FILTERS ── */
+  .filters {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.9rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .filters input[type=text], .filters input[type=date] {
+    padding: 6px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-width: 140px;
+  }
+  .filters input:focus { outline: none; border-color: var(--accent); }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap input { width: 100%; padding-left: 30px; }
+  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
+  .filter-label { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 7px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+  .btn-clear { background: none; border: none; font-size: 12px; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; }
+  .btn-clear:hover { color: var(--text); background: var(--surface2); }
+
+  /* ── MULTI-SELECT ── */
+  .ms-wrap { position: relative; min-width: 150px; }
+  .ms-trigger {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 6px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    min-height: 32px;
+    white-space: nowrap;
+    user-select: none;
+    font-family: 'DM Mono', monospace;
+    transition: border-color 0.15s;
+  }
+  .ms-trigger:hover { border-color: var(--accent); }
+  .ms-trigger.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  .ms-trigger .ms-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .ms-trigger .ms-arrow { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform 0.15s; }
+  .ms-trigger.open .ms-arrow { transform: rotate(180deg); }
+  .ms-count { background: var(--accent); color: #0f0f11; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+  .ms-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    min-width: 210px; max-height: 240px; overflow-y: auto;
+  }
+  .ms-dropdown.open { display: block; }
+  .ms-search { padding: 8px 10px; border-bottom: 0.5px solid var(--border); }
+  .ms-search input {
+    width: 100%; padding: 5px 8px;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    font-size: 12px;
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+  .ms-search input:focus { outline: none; border-color: var(--accent); }
+  .ms-option { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-family: 'DM Mono', monospace; }
+  .ms-option:hover { background: var(--surface2); }
+  .ms-option input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+  .ms-option label { cursor: pointer; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ms-actions { padding: 6px 10px; border-top: 0.5px solid var(--border); display: flex; gap: 8px; }
+  .ms-btn { background: none; border: none; font-size: 11px; color: var(--accent); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-family: 'DM Mono', monospace; }
+  .ms-btn:hover { background: var(--accent-dim); }
+  .ms-empty { padding: 12px; text-align: center; font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-meta {
+    padding: 0.75rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-meta span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .tbl-container { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--surface2);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    font-family: 'DM Mono', monospace;
+    transition: color 0.15s;
+  }
+  th:hover { color: var(--text); }
+  th.sorted { color: var(--accent); }
+  th .sort-icon { margin-left: 3px; opacity: 0.4; }
+  th.sorted .sort-icon { opacity: 1; }
+  td {
+    padding: 9px 12px;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  tr.overdue td { background: rgba(240,106,106,0.04); }
+  tr.overdue td:first-child { border-left: 2px solid var(--red); }
+  tr.priority td:first-child { border-left: 2px solid var(--amber); }
+
+  /* ── BADGES ── */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; font-family: 'DM Mono', monospace; letter-spacing: 0.02em; }
+  .badge-packed       { background: var(--green-bg);  color: var(--green-text); }
+  .badge-dispatched   { background: var(--accent-dim); color: var(--accent-text); }
+  .badge-pending      { background: var(--amber-bg);  color: var(--amber-text); }
+  .badge-hold         { background: var(--red-bg);    color: var(--red-text); }
+  .badge-inprogress   { background: var(--blue-bg);   color: var(--blue-text); }
+  .badge-rto          { background: var(--purple-bg); color: var(--purple-text); }
+  .badge-default      { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+  .priority-pill { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; background: var(--amber-bg); color: var(--amber); border: 0.5px solid rgba(240,180,41,0.3); font-family: 'DM Mono', monospace; }
+  .channel-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; background: var(--surface2); border: 0.5px solid var(--border2); color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-top: 0.5px solid var(--border);
+  }
+  .pagination span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    padding: 4px 10px;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    background: none;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+  .page-btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .page-btn.active { background: var(--accent); color: #0f0f11; border-color: var(--accent); font-weight: 700; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── LOADING / ERROR ── */
+  .loading-bar { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%; animation: loadbar 1.2s infinite; }
+  @keyframes loadbar { 0% { background-position: -100% 0; } 100% { background-position: 200% 0; } }
+  .center-msg { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 13px; font-family: 'DM Mono', monospace; }
+  .error-msg { background: var(--red-bg); border: 0.5px solid rgba(240,106,106,0.2); color: var(--red-text); border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; margin-bottom: 1rem; font-family: 'DM Mono', monospace; }
+  .spinner { display: block; width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: 14px;
+    padding: 1.5rem;
+    width: 580px;
+    max-width: 95vw;
+    max-height: 82vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); border-radius: 14px 14px 0 0; }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .modal-field { padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .modal-field .mf-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.07em; font-family: 'DM Mono', monospace; }
+  .modal-field .mf-value { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 6px; font-size: 16px; cursor: pointer; color: var(--muted); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .modal-close:hover { color: var(--text); border-color: var(--border2); }
+
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    main { padding: 1rem 0.75rem; }
+    header { padding: 0 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ AUTH ══════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="brand">🏭</div>
+    <h1>WH Tracker</h1>
+    <p>Sign in with Google to connect your warehouse sheets.</p>
+    <div id="g_id_onload"
+      data-client_id="463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com"
+      data-callback="handleCredential"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="filled_black"
+      data-text="sign_in_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+      data-width="280">
+    </div>
+    <p style="margin-top:1rem; font-size:11px; color:var(--muted);">First time? You'll configure your sheets after sign-in.</p>
+  </div>
+</div>
+
+<!-- ══════════ SETUP ══════════ -->
+<div id="setup-screen">
+  <h2>🏭 Configure WH sheets</h2>
+  <p>Add each warehouse's Google Sheet below. Find the Sheet ID in the URL:<br>
+  <code style="font-size:12px; background:var(--surface2); padding:2px 6px; border-radius:4px; color:var(--accent);">docs.google.com/spreadsheets/d/<strong>SHEET_ID_HERE</strong>/edit</code></p>
+
+  <div class="tip">
+    ℹ️ Tab name must match exactly (case-sensitive). Headers with running totals like "Units 1405362" are auto-matched by prefix — just make sure they start with the right keyword.
+  </div>
+
+  <div id="sheet-entries"></div>
+  <button class="btn-add" onclick="addSheetEntry()">+ Add another warehouse / tab</button>
+  <div id="setup-error" class="error-msg" style="display:none;"></div>
+  <button class="btn-primary" onclick="saveAndLoad()">Load WH data →</button>
+  <p style="font-size:11px; color:var(--muted); margin-top:0.75rem; text-align:center;">Config is saved locally in this browser only.</p>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+  <div id="loading-bar" class="loading-bar" style="display:none;"></div>
+  <header>
+    <div class="header-left">
+      <span class="header-brand">🏭 WH <span>Tracker</span></span>
+      <span id="last-refresh" style="font-size:11px; color:var(--muted); font-family:'DM Mono',monospace;"></span>
+    </div>
+    <div class="header-right">
+      <button class="btn-sm" onclick="refreshData()">↻ Refresh</button>
+      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+      <button class="btn-sm" onclick="openSetup()">⚙ Sheets</button>
+      <button class="btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="app-error" class="error-msg" style="display:none;"></div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-dot"></div>
+        <div class="stat-label">Total POs</div>
+        <div class="stat-value accent" id="s-total">—</div>
+        <div class="stat-sub" id="s-total-sub"> </div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Pending Packing</div>
+        <div class="stat-value amber" id="s-pending">—</div>
+        <div class="stat-sub" id="s-pending-sub"> </div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Packed / RTD</div>
+        <div class="stat-value green" id="s-packed">—</div>
+        <div class="stat-sub" id="s-packed-sub"> </div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Dispatched</div>
+        <div class="stat-value accent" id="s-dispatched">—</div>
+        <div class="stat-sub" id="s-dispatched-sub"> </div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Overdue Pickups</div>
+        <div class="stat-value red" id="s-overdue">—</div>
+        <div class="stat-sub">past targeted pickup</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <span class="filter-label">Filter</span>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="f-search" placeholder="PO name, LR, gatepass, channel…" oninput="applyFilters()">
+      </div>
+
+      <!-- Channel -->
+      <div class="ms-wrap" id="ms-channel-wrap">
+        <div class="ms-trigger" id="ms-channel-trigger" onclick="toggleMs('channel')">
+          <span class="ms-label" id="ms-channel-label">All channels</span>
+          <span class="ms-arrow">▼</span>
+        </div>
+        <div class="ms-dropdown" id="ms-channel-dd">
+          <div class="ms-search"><input type="text" placeholder="Search…" oninput="filterMsOptions('channel', this.value)"></div>
+          <div id="ms-channel-opts"></div>
+          <div class="ms-actions">
+            <button class="ms-btn" onclick="selectAllMs('channel')">All</button>
+            <button class="ms-btn" onclick="clearMs('channel')">None</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Packing Status -->
+      <div class="ms-wrap" id="ms-pstatus-wrap">
+        <div class="ms-trigger" id="ms-pstatus-trigger" onclick="toggleMs('pstatus')">
+          <span class="ms-label" id="ms-pstatus-label">All packing status</span>
+          <span class="ms-arrow">▼</span>
+        </div>
+        <div class="ms-dropdown" id="ms-pstatus-dd">
+          <div id="ms-pstatus-opts"></div>
+          <div class="ms-actions">
+            <button class="ms-btn" onclick="selectAllMs('pstatus')">All</button>
+            <button class="ms-btn" onclick="clearMs('pstatus')">None</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dispatch Status -->
+      <div class="ms-wrap" id="ms-dstatus-wrap">
+        <div class="ms-trigger" id="ms-dstatus-trigger" onclick="toggleMs('dstatus')">
+          <span class="ms-label" id="ms-dstatus-label">All dispatch status</span>
+          <span class="ms-arrow">▼</span>
+        </div>
+        <div class="ms-dropdown" id="ms-dstatus-dd">
+          <div id="ms-dstatus-opts"></div>
+          <div class="ms-actions">
+            <button class="ms-btn" onclick="selectAllMs('dstatus')">All</button>
+            <button class="ms-btn" onclick="clearMs('dstatus')">None</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="ms-wrap" id="ms-loc-wrap">
+        <div class="ms-trigger" id="ms-loc-trigger" onclick="toggleMs('loc')">
+          <span class="ms-label" id="ms-loc-label">All locations</span>
+          <span class="ms-arrow">▼</span>
+        </div>
+        <div class="ms-dropdown" id="ms-loc-dd">
+          <div class="ms-search"><input type="text" placeholder="Search…" oninput="filterMsOptions('loc', this.value)"></div>
+          <div id="ms-loc-opts"></div>
+          <div class="ms-actions">
+            <button class="ms-btn" onclick="selectAllMs('loc')">All</button>
+            <button class="ms-btn" onclick="clearMs('loc')">None</button>
+          </div>
+        </div>
+      </div>
+
+      <input type="date" id="f-gp-from" onchange="applyFilters()" title="Gatepass received from">
+      <input type="date" id="f-gp-to"   onchange="applyFilters()" title="Gatepass received to">
+      <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-meta">
+        <span id="row-count">— rows</span>
+        <span id="sheet-tabs"></span>
+      </div>
+      <div class="tbl-container">
+        <table id="wh-table">
+          <thead>
+            <tr>
+              <th onclick="sortBy('channel')"      data-col="channel">Channel <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('location')"     data-col="location">Location <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('poName')"       data-col="poName">PO Name <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('emailSubject')" data-col="emailSubject">Email Subject <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('gpDate')"       data-col="gpDate">GP Received <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('gpNo')"         data-col="gpNo">Gatepass No <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('units')"        data-col="units">Units <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('targetedPickup')" data-col="targetedPickup">Target Pickup <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('packingStatus')" data-col="packingStatus">Packing Status <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('status')"       data-col="status">Status <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('rtdDate')"      data-col="rtdDate">RTD Date <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('dispatchDate')" data-col="dispatchDate">Dispatch Date <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('packedQty')"    data-col="packedQty">Packed Qty <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('boxes')"        data-col="boxes">Boxes <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('deliveryPartner')" data-col="deliveryPartner">Delivery Partner <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('lr')"           data-col="lr">LR / Docket <span class="sort-icon">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="wh-tbody">
+            <tr><td colspan="16" class="center-msg"><div class="spinner"></div>Loading warehouse data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="page-info">—</span>
+        <div class="page-btns" id="page-btns"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════ MODAL ══════════ -->
+<div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('detail-modal').classList.remove('open')">×</button>
+    <h2 id="modal-po-name">Row Details</h2>
+    <div class="modal-grid" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════
+const OAUTH_CLIENT_ID = "463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com";
+
+// Prefix-based column mapping.
+// For each header, we lowercase + trim it, then check if it STARTS WITH any of the keys.
+// Order matters — more specific prefixes should come first.
+const PREFIX_MAP = [
+  // Identification
+  { prefix: "sr no",            key: "srNo" },
+  { prefix: "sr.",              key: "srNo" },
+  { prefix: "channel name",     key: "channel" },
+  { prefix: "channel",          key: "channel" },
+  { prefix: "location",         key: "location" },
+  { prefix: "email subject",    key: "emailSubject" },
+  { prefix: "email",            key: "emailSubject" },
+  { prefix: "po name",          key: "poName" },
+  { prefix: "po no",            key: "poName" },
+  { prefix: "po number",        key: "poName" },
+  // Gatepass
+  { prefix: "gatepass received on", key: "gpDate" },
+  { prefix: "gatepass received",    key: "gpDate" },
+  { prefix: "gatepass no",     key: "gpNo" },
+  { prefix: "gatepass type",   key: "gpType" },
+  { prefix: "gatepass",        key: "gpNo" },
+  // Quantities (prefix match — handles "units 1405362" etc.)
+  { prefix: "units",           key: "units" },
+  { prefix: "packed/ dispatch qty", key: "packedQty" },
+  { prefix: "packed/dispatch qty",  key: "packedQty" },
+  { prefix: "packed qty",      key: "packedQty" },
+  { prefix: "disp qty",        key: "packedQty" },
+  { prefix: "boxes",           key: "boxes" },
+  { prefix: "bar coding",      key: "barcodingQty" },
+  { prefix: "barcoding",       key: "barcodingQty" },
+  { prefix: "combo set",       key: "comboQty" },
+  // Scheduling
+  { prefix: "targeted pickup", key: "targetedPickup" },
+  { prefix: "target pickup",   key: "targetedPickup" },
+  { prefix: "priority level",  key: "priority" },
+  { prefix: "priority",        key: "priority" },
+  // Status
+  { prefix: "packing status",  key: "packingStatus" },
+  { prefix: "status",          key: "status" },
+  // Dates
+  { prefix: "rtd date",        key: "rtdDate" },
+  { prefix: "dispatch date",   key: "dispatchDate" },
+  // Delivery
+  { prefix: "delivery partner", key: "deliveryPartner" },
+  { prefix: "lr",              key: "lr" },
+  // Misc
+  { prefix: "additional activity", key: "remarks" },
+  { prefix: "remarks",         key: "remarks" },
+  { prefix: "start time",      key: "startTime" },
+  { prefix: "end time",        key: "endTime" },
+];
+
+function mapHeader(rawHeader) {
+  const h = (rawHeader || "").toLowerCase().trim();
+  for (const { prefix, key } of PREFIX_MAP) {
+    if (h.startsWith(prefix)) return key;
+  }
+  return h; // fallback: use raw header as-is
+}
+
+// ═══════════════════════════════════════
+//  STATUS NORMALISATION
+// ═══════════════════════════════════════
+function normalisePackingStatus(raw) {
+  const s = (raw || "").trim().toLowerCase();
+  if (!s) return "";
+  if (s.includes("done") || s.includes("complete") || s.includes("packed")) return "Packed";
+  if (s.includes("in progress") || s.includes("ongoing") || s.includes("wip")) return "In Progress";
+  if (s.includes("pending") || s.includes("not started")) return "Pending";
+  if (s.includes("hold")) return "Hold";
+  return raw.trim().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function normaliseStatus(raw) {
+  const s = (raw || "").trim().toLowerCase();
+  if (!s) return "";
+  if (s.includes("dispatch") && (s.includes("done") || s.includes("complete") || s === "dispatched")) return "Dispatched";
+  if (s.includes("dispatch") && s.includes("pending")) return "Dispatch Pending";
+  if (s.includes("rtd") || s.includes("ready to dispatch")) return "RTD";
+  if (s.includes("hold")) return "Hold";
+  if (s.includes("rto")) return "RTO";
+  if (s.includes("deliver")) return "Delivered";
+  if (s.includes("pending")) return "Pending";
+  return raw.trim().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let accessToken = null;
+let allRows = [];
+let filteredRows = [];
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let sortCol = "gpDate";
+let sortDir = -1;
+
+const msState = { channel: new Set(), pstatus: new Set(), dstatus: new Set(), loc: new Set() };
+
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+function handleCredential(response) {
+  const scope = "https://www.googleapis.com/auth/spreadsheets.readonly";
+  const redirectUri = window.location.href.split("?")[0].split("#")[0];
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  window.location.href = authUrl;
+}
+
+function checkOAuthCallback() {
+  const hash = window.location.hash;
+  if (hash.includes("access_token=")) {
+    const params = new URLSearchParams(hash.replace("#", "?").slice(1));
+    accessToken = params.get("access_token");
+    window.history.replaceState({}, "", window.location.pathname);
+    showAppOrSetup();
+    return true;
+  }
+  return false;
+}
+
+function showAppOrSetup() {
+  document.getElementById("auth-screen").style.display = "none";
+  const config = loadConfig();
+  if (!config || config.sheets.length === 0) {
+    showSetup();
+  } else {
+    showApp();
+    loadAllSheets(config.sheets);
+  }
+}
+
+function signOut() { accessToken = null; location.reload(); }
+
+// ═══════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════
+function showSetup() {
+  document.getElementById("setup-screen").style.display = "block";
+  document.getElementById("app").style.display = "none";
+  const config = loadConfig();
+  const existing = config ? config.sheets : [{ id: "", tab: "", name: "" }];
+  existing.forEach(s => addSheetEntry(s.id, s.tab, s.name));
+}
+
+function openSetup() {
+  document.getElementById("sheet-entries").innerHTML = "";
+  showSetup();
+}
+
+let entryCount = 0;
+function addSheetEntry(id = "", tab = "", name = "") {
+  entryCount++;
+  const d = document.createElement("div");
+  d.className = "sheet-entry";
+  d.innerHTML = `
+    <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${entryCount}</span>
+      <button class="btn-remove" onclick="this.closest('.sheet-entry').remove()">×</button>
+    </div>
+    <div>
+      <label>Sheet ID (from URL)</label>
+      <input type="text" class="se-id" value="${id}" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUq…">
+    </div>
+    <div>
+      <label>Tab name (exact)</label>
+      <input type="text" class="se-tab" value="${tab}" placeholder="WH Mumbai">
+    </div>
+    <div style="grid-column:1/-1;">
+      <label>Friendly name (optional)</label>
+      <input type="text" class="se-name" value="${name}" placeholder="e.g. Mumbai WH">
+    </div>
+  `;
+  document.getElementById("sheet-entries").appendChild(d);
+}
+
+function saveAndLoad() {
+  const entries = document.querySelectorAll(".sheet-entry");
+  const sheets = [];
+  let valid = true;
+  entries.forEach(e => {
+    const id   = e.querySelector(".se-id").value.trim();
+    const tab  = e.querySelector(".se-tab").value.trim();
+    const name = e.querySelector(".se-name").value.trim();
+    if (id && tab) sheets.push({ id, tab, name: name || tab });
+    else if (id || tab) valid = false;
+  });
+  if (!valid) { showSetupError("Fill in both Sheet ID and Tab for each row, or remove incomplete rows."); return; }
+  if (sheets.length === 0) { showSetupError("Add at least one sheet."); return; }
+  saveConfig({ sheets });
+  document.getElementById("setup-error").style.display = "none";
+  showApp();
+  loadAllSheets(sheets);
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById("setup-error");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function saveConfig(c) { try { localStorage.setItem("wh_tracker_config", JSON.stringify(c)); } catch(e) {} }
+function loadConfig() { try { const s = localStorage.getItem("wh_tracker_config"); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
+
+// ═══════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════
+function showApp() {
+  document.getElementById("setup-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+async function loadAllSheets(sheets) {
+  showLoading(true);
+  clearError();
+  allRows = [];
+  const results = await Promise.allSettled(sheets.map(s => fetchSheet(s)));
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") allRows.push(...r.value);
+    else console.warn("Failed:", sheets[i].name, r.reason);
+  });
+
+  if (allRows.length === 0) {
+    showError("No data loaded. Check your Sheet IDs and tab names — they must match exactly.");
+    showLoading(false);
+    return;
+  }
+
+  populateFilters();
+  applyFilters();
+  const defaultTh = document.querySelector('th[data-col="gpDate"]');
+  if (defaultTh) { defaultTh.classList.add("sorted"); const ic = defaultTh.querySelector(".sort-icon"); if (ic) ic.textContent = "↓"; }
+  showLoading(false);
+  document.getElementById("last-refresh").textContent = "↺ " + new Date().toLocaleTimeString();
+  document.getElementById("sheet-tabs").textContent = sheets.map(s => s.name).join(" · ");
+}
+
+async function fetchSheet(sheet) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheet.id}/values/${encodeURIComponent(sheet.tab)}?valueRenderOption=FORMATTED_VALUE`;
+  const res = await fetch(url, { headers: { Authorization: "Bearer " + accessToken } });
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || `HTTP ${res.status}`); }
+  const data = await res.json();
+  const rows = data.values || [];
+  if (rows.length < 2) return [];
+
+  const rawHeaders = rows[0];
+  const mappedKeys = rawHeaders.map(mapHeader);
+
+  return rows.slice(1).map((row, i) => {
+    const obj = { _whName: sheet.name, _rowIndex: i + 2 };
+    mappedKeys.forEach((key, ci) => { obj[key] = row[ci] || ""; });
+
+    obj.channel        = obj.channel || sheet.name;
+    obj.gpDate         = normaliseDate(obj.gpDate);
+    obj.rtdDate        = normaliseDate(obj.rtdDate);
+    obj.dispatchDate   = normaliseDate(obj.dispatchDate);
+    obj.targetedPickup = normaliseDate(obj.targetedPickup);
+    obj.packingStatus  = normalisePackingStatus(obj.packingStatus);
+    obj.status         = normaliseStatus(obj.status);
+
+    return obj;
+  }).filter(r => r.poName || r.gpNo || r.channel);
+}
+
+function refreshData() {
+  const config = loadConfig();
+  if (config) loadAllSheets(config.sheets);
+}
+
+// ═══════════════════════════════════════
+//  MULTI-SELECT
+// ═══════════════════════════════════════
+function buildMsOptions(key, values) {
+  const container = document.getElementById(`ms-${key}-opts`);
+  container.innerHTML = values.length === 0
+    ? `<div class="ms-empty">No options</div>`
+    : values.map(v => `
+      <div class="ms-option">
+        <input type="checkbox" id="ms-${key}-${safeid(v)}" value="${esc(v)}" onchange="onMsChange('${key}', this.value, this.checked)">
+        <label for="ms-${key}-${safeid(v)}">${esc(v)}</label>
+      </div>`).join("");
+  updateMsTrigger(key);
+}
+
+function safeid(v) { return btoa(unescape(encodeURIComponent(v))).replace(/[^a-zA-Z0-9]/g, ""); }
+
+function filterMsOptions(key, query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll(`#ms-${key}-opts .ms-option`).forEach(el => {
+    el.style.display = el.querySelector("label").textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+function onMsChange(key, value, checked) {
+  if (checked) msState[key].add(value); else msState[key].delete(value);
+  updateMsTrigger(key);
+  applyFilters();
+}
+
+function selectAllMs(key) {
+  msState[key].clear();
+  document.querySelectorAll(`#ms-${key}-opts input[type=checkbox]`).forEach(cb => cb.checked = false);
+  updateMsTrigger(key);
+  applyFilters();
+}
+
+function clearMs(key) { selectAllMs(key); }
+
+function updateMsTrigger(key) {
+  const sel = msState[key];
+  const label = document.getElementById(`ms-${key}-label`);
+  const trigger = document.getElementById(`ms-${key}-trigger`);
+  const defaults = { channel: "All channels", pstatus: "All packing status", dstatus: "All dispatch status", loc: "All locations" };
+  if (sel.size === 0) {
+    label.innerHTML = defaults[key];
+    trigger.classList.remove("active");
+  } else {
+    const names = [...sel];
+    label.innerHTML = `${esc(names.length === 1 ? names[0] : `${names.length} selected`)} <span class="ms-count">${names.length}</span>`;
+    trigger.classList.add("active");
+  }
+}
+
+function toggleMs(key) {
+  const dd = document.getElementById(`ms-${key}-dd`);
+  const trigger = document.getElementById(`ms-${key}-trigger`);
+  const isOpen = dd.classList.contains("open");
+  document.querySelectorAll(".ms-dropdown").forEach(d => d.classList.remove("open"));
+  document.querySelectorAll(".ms-trigger").forEach(t => t.classList.remove("open"));
+  if (!isOpen) { dd.classList.add("open"); trigger.classList.add("open"); }
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".ms-wrap")) {
+    document.querySelectorAll(".ms-dropdown").forEach(d => d.classList.remove("open"));
+    document.querySelectorAll(".ms-trigger").forEach(t => t.classList.remove("open"));
+  }
+});
+
+// ═══════════════════════════════════════
+//  FILTERS & TABLE
+// ═══════════════════════════════════════
+function populateFilters() {
+  const channels = [...new Set(allRows.map(r => r.channel).filter(Boolean))].sort();
+  const pstatuses = [...new Set(allRows.map(r => r.packingStatus).filter(Boolean))].sort();
+  const dstatuses = [...new Set(allRows.map(r => r.status).filter(Boolean))].sort();
+  const locations = [...new Set(allRows.map(r => r.location).filter(Boolean))].sort();
+
+  buildMsOptions("channel", channels);
+  buildMsOptions("pstatus", pstatuses);
+  buildMsOptions("dstatus", dstatuses);
+  buildMsOptions("loc", locations);
+}
+
+const today = new Date().toISOString().slice(0, 10);
+
+function isOverdue(row) {
+  if (!row.targetedPickup) return false;
+  const s = (row.status || "").toLowerCase();
+  if (s === "dispatched" || s === "delivered") return false;
+  return row.targetedPickup < today;
+}
+
+function applyFilters() {
+  const search  = document.getElementById("f-search").value.toLowerCase();
+  const gpFrom  = document.getElementById("f-gp-from").value;
+  const gpTo    = document.getElementById("f-gp-to").value;
+
+  const selChannels  = msState.channel;
+  const selPStatuses = new Set([...msState.pstatus].map(s => s.toLowerCase()));
+  const selDStatuses = new Set([...msState.dstatus].map(s => s.toLowerCase()));
+  const selLocs      = msState.loc;
+
+  filteredRows = allRows.filter(r => {
+    if (selChannels.size  > 0 && !selChannels.has(r.channel))  return false;
+    if (selPStatuses.size > 0 && !selPStatuses.has((r.packingStatus || "").toLowerCase())) return false;
+    if (selDStatuses.size > 0 && !selDStatuses.has((r.status || "").toLowerCase())) return false;
+    if (selLocs.size      > 0 && !selLocs.has(r.location))     return false;
+    if (gpFrom && r.gpDate && r.gpDate < gpFrom) return false;
+    if (gpTo   && r.gpDate && r.gpDate > gpTo)   return false;
+    if (search) {
+      const hay = [r.poName, r.emailSubject, r.gpNo, r.lr, r.channel, r.location, r.deliveryPartner, r.status, r.packingStatus].join(" ").toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  sortRows();
+  currentPage = 1;
+  renderTable();
+  updateStats();
+}
+
+function clearFilters() {
+  ["f-search","f-gp-from","f-gp-to"].forEach(id => document.getElementById(id).value = "");
+  ["channel","pstatus","dstatus","loc"].forEach(key => {
+    msState[key].clear();
+    document.querySelectorAll(`#ms-${key}-opts input[type=checkbox]`).forEach(cb => cb.checked = false);
+    updateMsTrigger(key);
+  });
+  applyFilters();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  document.querySelectorAll("th").forEach(th => { th.classList.remove("sorted"); const ic = th.querySelector(".sort-icon"); if (ic) ic.textContent = "↕"; });
+  const th = document.querySelector(`th[data-col="${col}"]`);
+  if (th) { th.classList.add("sorted"); const ic = th.querySelector(".sort-icon"); if (ic) ic.textContent = sortDir === -1 ? "↓" : "↑"; }
+  sortRows();
+  renderTable();
+}
+
+const DATE_COLS = new Set(["gpDate","rtdDate","dispatchDate","targetedPickup"]);
+
+function sortRows() {
+  filteredRows.sort((a, b) => {
+    let av = a[sortCol] || "", bv = b[sortCol] || "";
+    if (DATE_COLS.has(sortCol)) {
+      if (!av && !bv) return 0; if (!av) return 1; if (!bv) return -1;
+      return sortDir * av.localeCompare(bv);
+    }
+    if (!isNaN(parseFloat(av)) && !isNaN(parseFloat(bv))) return sortDir * (parseFloat(av) - parseFloat(bv));
+    return sortDir * String(av).localeCompare(String(bv));
+  });
+}
+
+function packingBadge(s) {
+  const v = (s || "").toLowerCase();
+  if (v === "packed")      return "badge-packed";
+  if (v === "in progress") return "badge-inprogress";
+  if (v === "pending")     return "badge-pending";
+  if (v === "hold")        return "badge-hold";
+  return "badge-default";
+}
+
+function statusBadge(s) {
+  const v = (s || "").toLowerCase();
+  if (v === "dispatched")       return "badge-dispatched";
+  if (v === "dispatch pending") return "badge-pending";
+  if (v === "rtd")              return "badge-packed";
+  if (v === "hold")             return "badge-hold";
+  if (v === "rto")              return "badge-rto";
+  if (v === "delivered")        return "badge-packed";
+  if (v === "pending")          return "badge-pending";
+  return "badge-default";
+}
+
+function displayDate(d) {
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d || "";
+  const [y, m, day] = d.split("-");
+  return `${day}-${m}-${y}`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById("wh-tbody");
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filteredRows.slice(start, start + PAGE_SIZE);
+
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="16" class="center-msg">No rows match your filters.</td></tr>`;
+    document.getElementById("row-count").textContent = "0 rows";
+    renderPagination();
+    return;
+  }
+
+  document.getElementById("row-count").textContent = filteredRows.length.toLocaleString() + " rows";
+
+  tbody.innerHTML = page.map((r, i) => {
+    const over = isOverdue(r);
+    const hasPriority = !!(r.priority && r.priority.trim());
+    return `<tr class="${over ? "overdue" : hasPriority ? "priority" : ""}" onclick="showDetail(${start + i})" style="cursor:pointer;">
+      <td><span class="channel-pill">${esc(r.channel)}</span></td>
+      <td>${esc(r.location)}</td>
+      <td style="font-weight:600; font-family:'DM Mono',monospace;">${esc(r.poName)}</td>
+      <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.emailSubject)}">${esc(r.emailSubject)}</td>
+      <td>${esc(displayDate(r.gpDate))}</td>
+      <td style="font-family:'DM Mono',monospace; font-size:12px;">${esc(r.gpNo)}</td>
+      <td style="font-weight:500;">${esc(r.units)}</td>
+      <td style="${over ? "color:var(--red); font-weight:600;" : ""}">${esc(displayDate(r.targetedPickup))}</td>
+      <td><span class="badge ${packingBadge(r.packingStatus)}">${esc(r.packingStatus || "—")}</span></td>
+      <td><span class="badge ${statusBadge(r.status)}">${esc(r.status || "—")}</span></td>
+      <td>${esc(displayDate(r.rtdDate))}</td>
+      <td>${esc(displayDate(r.dispatchDate))}</td>
+      <td>${esc(r.packedQty)}</td>
+      <td>${esc(r.boxes)}</td>
+      <td>${esc(r.deliveryPartner)}</td>
+      <td style="font-family:'DM Mono',monospace; font-size:12px;">${esc(r.lr)}</td>
+    </tr>`;
+  }).join("");
+
+  renderPagination();
+}
+
+function esc(s) { return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function renderPagination() {
+  const total = filteredRows.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  document.getElementById("page-info").textContent = `Page ${currentPage} of ${pages || 1} (${total.toLocaleString()} rows)`;
+  const btns = document.getElementById("page-btns");
+  if (pages <= 1) { btns.innerHTML = ""; return; }
+  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
+  for (let p = Math.max(1, currentPage - 2); p <= Math.min(pages, currentPage + 2); p++) {
+    html += `<button class="page-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? "disabled" : ""}>›</button>`;
+  btns.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filteredRows.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(pages, p));
+  renderTable();
+}
+
+// ═══════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════
+function updateStats() {
+  const rows       = filteredRows;
+  const total      = rows.length;
+  const pending    = rows.filter(r => { const s = (r.packingStatus || "").toLowerCase(); return s === "pending" || s === ""; }).length;
+  const packed     = rows.filter(r => (r.packingStatus || "").toLowerCase() === "packed").length;
+  const dispatched = rows.filter(r => { const s = (r.status || "").toLowerCase(); return s === "dispatched" || s === "delivered"; }).length;
+  const overdue    = rows.filter(isOverdue).length;
+
+  const totalUnits  = rows.reduce((acc, r) => acc + (parseFloat(r.units) || 0), 0);
+  const totalBoxes  = rows.reduce((acc, r) => acc + (parseFloat(r.boxes) || 0), 0);
+
+  document.getElementById("s-total").textContent      = total.toLocaleString();
+  document.getElementById("s-total-sub").textContent  = totalUnits > 0 ? `${totalUnits.toLocaleString()} units` : " ";
+  document.getElementById("s-pending").textContent    = pending.toLocaleString();
+  document.getElementById("s-pending-sub").textContent = "not yet packed";
+  document.getElementById("s-packed").textContent     = packed.toLocaleString();
+  document.getElementById("s-packed-sub").textContent = "ready to dispatch";
+  document.getElementById("s-dispatched").textContent = dispatched.toLocaleString();
+  document.getElementById("s-dispatched-sub").textContent = totalBoxes > 0 ? `${totalBoxes.toLocaleString()} boxes` : " ";
+  document.getElementById("s-overdue").textContent    = overdue.toLocaleString();
+}
+
+// ═══════════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════════
+function showDetail(idx) {
+  const r = filteredRows[idx];
+  if (!r) return;
+  document.getElementById("modal-po-name").textContent = r.poName || r.gpNo || "Row Details";
+  const fields = [
+    ["Channel",          r.channel],
+    ["Location",         r.location],
+    ["PO Name",          r.poName],
+    ["Email Subject",    r.emailSubject],
+    ["GP No",            r.gpNo],
+    ["GP Type",          r.gpType],
+    ["GP Received",      displayDate(r.gpDate)],
+    ["Priority",         r.priority],
+    ["Units",            r.units],
+    ["Barcoding Qty",    r.barcodingQty],
+    ["Combo Set Qty",    r.comboQty],
+    ["Targeted Pickup",  displayDate(r.targetedPickup)],
+    ["Packing Status",   r.packingStatus],
+    ["Status",           r.status],
+    ["RTD Date",         displayDate(r.rtdDate)],
+    ["Dispatch Date",    displayDate(r.dispatchDate)],
+    ["Packed/Disp Qty",  r.packedQty],
+    ["Boxes",            r.boxes],
+    ["Delivery Partner", r.deliveryPartner],
+    ["LR / Docket",      r.lr],
+    ["Start Time",       r.startTime],
+    ["End Time",         r.endTime],
+    ["Remarks",          r.remarks],
+  ];
+  document.getElementById("modal-body").innerHTML = fields
+    .filter(([, v]) => v)
+    .map(([l, v]) => `<div class="modal-field"><div class="mf-label">${l}</div><div class="mf-value">${esc(v)}</div></div>`)
+    .join("");
+  document.getElementById("detail-modal").classList.add("open");
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById("detail-modal"))
+    document.getElementById("detail-modal").classList.remove("open");
+}
+
+// ═══════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════
+function exportCSV() {
+  const cols = ["channel","location","poName","emailSubject","gpDate","gpNo","gpType","units","targetedPickup","priority","packingStatus","status","rtdDate","dispatchDate","packedQty","boxes","deliveryPartner","lr","remarks"];
+  const dateFields = new Set(["gpDate","rtdDate","dispatchDate","targetedPickup"]);
+  const header = cols.join(",");
+  const rowsData = filteredRows.map(r => cols.map(c => {
+    const v = dateFields.has(c) ? displayDate(r[c] || "") : (r[c] || "");
+    return `"${v.replace(/"/g,'""')}"`;
+  }).join(","));
+  const csv  = [header, ...rowsData].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a    = document.createElement("a");
+  a.href     = URL.createObjectURL(blob);
+  a.download = "WH_Export_" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click();
+}
+
+// ═══════════════════════════════════════
+//  DATE NORMALISATION
+// ═══════════════════════════════════════
+function normaliseDate(d) {
+  if (!d || typeof d !== "string") return "";
+  d = d.trim();
+  if (!d) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+
+  function iso(day, mon, yr) {
+    const y = yr.length === 2 ? (parseInt(yr) > 50 ? "19" + yr : "20" + yr) : yr;
+    return `${y}-${mon.padStart(2,"0")}-${day.padStart(2,"0")}`;
+  }
+  let m;
+  m = d.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) return iso(m[1], m[2], m[3]);
+
+  const p = new Date(d);
+  if (!isNaN(p)) return p.toISOString().slice(0, 10);
+  return d;
+}
+
+function showLoading(on) { document.getElementById("loading-bar").style.display = on ? "block" : "none"; }
+function showError(msg)  { const e = document.getElementById("app-error"); e.textContent = msg; e.style.display = "block"; }
+function clearError()    { document.getElementById("app-error").style.display = "none"; }
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+if (!checkOAuthCallback()) {
+  // GSI button renders automatically
+}
+</script>
+</body>
+</html>
