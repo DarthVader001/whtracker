@@ -650,53 +650,94 @@ const OAUTH_CLIENT_ID = "463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.goog
 // For each header, we lowercase + trim it, then check if it STARTS WITH any of the keys.
 // Order matters — more specific prefixes should come first.
 const PREFIX_MAP = [
-  // Identification
+  // Serial number — many variants
+  { prefix: "serial no",        key: "srNo" },
+  { prefix: "sl no",            key: "srNo" },
   { prefix: "sr no",            key: "srNo" },
   { prefix: "sr.",              key: "srNo" },
+  // SI alone (some sheets use it as serial; skip if it maps to something useful)
+  // Channel
   { prefix: "channel name",     key: "channel" },
+  { prefix: "channel.",         key: "channel" },
   { prefix: "channel",          key: "channel" },
-  { prefix: "location",         key: "location" },
+  // Location — "party location", "location", etc.
   { prefix: "party location",   key: "location" },
+  { prefix: "location",         key: "location" },
+  // Email / PO identity
   { prefix: "email subject",    key: "emailSubject" },
   { prefix: "email",            key: "emailSubject" },
   { prefix: "po name",          key: "poName" },
   { prefix: "po no",            key: "poName" },
   { prefix: "po number",        key: "poName" },
-  // Gatepass
-  { prefix: "gatepass received on", key: "gpDate" },
-  { prefix: "gatepass received",    key: "gpDate" },
-  { prefix: "gatepass no",     key: "gpNo" },
-  { prefix: "gatepass type",   key: "gpType" },
-  { prefix: "gatepass",        key: "gpNo" },
-  // Quantities (prefix match — handles "units 1405362" etc.)
-  { prefix: "units",           key: "units" },
-  { prefix: "packed/ dispatch qty", key: "packedQty" },
-  { prefix: "packed/dispatch qty",  key: "packedQty" },
-  { prefix: "packed qty",      key: "packedQty" },
-  { prefix: "disp qty",        key: "packedQty" },
-  { prefix: "boxes",           key: "boxes" },
-  { prefix: "bar coding",      key: "barcodingQty" },
-  { prefix: "barcoding",       key: "barcodingQty" },
-  { prefix: "combo set",       key: "comboQty" },
+  // Gatepass / Picklist — more specific first
+  { prefix: "gatepass no./picklist no", key: "gpNo" },
+  { prefix: "gatepass no./picklist",    key: "gpNo" },
+  { prefix: "gatepass received on",     key: "gpDate" },
+  { prefix: "gatepass received",        key: "gpDate" },
+  { prefix: "gatepass no.",      key: "gpNo" },
+  { prefix: "gatepass no",       key: "gpNo" },
+  { prefix: "gatepass type",     key: "gpType" },
+  { prefix: "gatepass",          key: "gpNo" },
+  { prefix: "picklist/gp date",  key: "gpDate" },
+  { prefix: "picklist status",   key: "picklistStatus" },
+  { prefix: "picklist assign",   key: "picklistAssign" },
+  // Invoice
+  { prefix: "invoice number",    key: "invoiceNo" },
+  { prefix: "invoice no",        key: "invoiceNo" },
+  { prefix: "inv date",          key: "invoiceDate" },
+  { prefix: "inv value",         key: "invoiceValue" },
+  // Quantities — prefix handles running totals like "Units 1405362"
+  { prefix: "units",             key: "units" },
+  { prefix: "qty",               key: "units" },
+  { prefix: "packed/ dispatch  qty", key: "packedQty" },
+  { prefix: "packed/ dispatch qty",  key: "packedQty" },
+  { prefix: "packed/dispatch qty",   key: "packedQty" },
+  { prefix: "packed qty",        key: "packedQty" },
+  { prefix: "disp qty",          key: "packedQty" },
+  { prefix: "close qty",         key: "closeQty" },
+  // Boxes — "no. of box", "boxes"
+  { prefix: "no. of box",        key: "boxes" },
+  { prefix: "no. of boxes",      key: "boxes" },
+  { prefix: "boxes",             key: "boxes" },
+  // Barcoding / Combo
+  { prefix: "bar coding",        key: "barcodingQty" },
+  { prefix: "barcoding qty",     key: "barcodingQty" },
+  { prefix: "barcoding",         key: "barcodingQty" },
+  { prefix: "combo set qty",     key: "comboQty" },
+  { prefix: "combo set",         key: "comboQty" },
   // Scheduling
-  { prefix: "targeted pickup", key: "targetedPickup" },
-  { prefix: "target pickup",   key: "targetedPickup" },
-  { prefix: "priority level",  key: "priority" },
-  { prefix: "priority",        key: "priority" },
-  // Status
-  { prefix: "packing status",  key: "packingStatus" },
-  { prefix: "status",          key: "status" },
+  { prefix: "targeted pickup date (eta)", key: "targetedPickup" },
+  { prefix: "targeted pickup date",       key: "targetedPickup" },
+  { prefix: "targeted pickup",    key: "targetedPickup" },
+  { prefix: "target pickup",      key: "targetedPickup" },
+  { prefix: "priority level",     key: "priority" },
+  { prefix: "priority",           key: "priority" },
+  // Status — packing before plain status
+  { prefix: "packing status",     key: "packingStatus" },
+  { prefix: "re-check status",    key: "recheckStatus" },
+  { prefix: "status",             key: "status" },
   // Dates
-  { prefix: "rtd date",        key: "rtdDate" },
-  { prefix: "dispatch date",   key: "dispatchDate" },
-  // Delivery
-  { prefix: "delivery partner", key: "deliveryPartner" },
-  { prefix: "lr",              key: "lr" },
-  // Misc
-  { prefix: "additional activity", key: "remarks" },
-  { prefix: "remarks",         key: "remarks" },
-  { prefix: "start time",      key: "startTime" },
-  { prefix: "end time",        key: "endTime" },
+  { prefix: "rtd date",           key: "rtdDate" },
+  { prefix: "dispatch date",      key: "dispatchDate" },
+  // Delivery / tracking
+  { prefix: "delivery partner",   key: "deliveryPartner" },
+  { prefix: "tracking id",        key: "lr" },
+  { prefix: "tracking no",        key: "lr" },
+  { prefix: "lr",                 key: "lr" },
+  // Misc / remarks
+  { prefix: "additional activity", key: "activityRemarks" },
+  { prefix: "remaks",             key: "remarks" },
+  { prefix: "remarks",            key: "remarks" },
+  { prefix: "start time",         key: "startTime" },
+  { prefix: "end time",           key: "endTime" },
+  { prefix: "duration in min",    key: "durationMin" },
+  { prefix: "duration in hour",   key: "durationHr" },
+  { prefix: "duration bucket",    key: "durationBucket" },
+  { prefix: "duration",           key: "durationMin" },
+  { prefix: "aging",              key: "aging" },
+  { prefix: "orders cutoff",      key: "ordersCutoff" },
+  { prefix: "gate pass update",   key: "gpUpdate" },
+  { prefix: "include in pivot",   key: "inPivot" },
 ];
 
 function mapHeader(rawHeader) {
@@ -788,8 +829,8 @@ function showSetup() {
   document.getElementById("setup-screen").style.display = "block";
   document.getElementById("app").style.display = "none";
   const config = loadConfig();
-  const existing = config ? config.sheets : [{ id: "", tab: "", name: "" }];
-  existing.forEach(s => addSheetEntry(s.id, s.tab, s.name));
+  const existing = config ? config.sheets : [{ id: "", tab: "", name: "", headerRow: 1 }];
+  existing.forEach(s => addSheetEntry(s.id, s.tab, s.name, s.headerRow || 1));
 }
 
 function openSetup() {
@@ -798,13 +839,17 @@ function openSetup() {
 }
 
 let entryCount = 0;
-function addSheetEntry(id = "", tab = "", name = "") {
+function addSheetEntry(id, tab, name, headerRow) {
+  id = id || ""; tab = tab || ""; name = name || ""; headerRow = headerRow || 1;
   entryCount++;
+  const n = entryCount;
+  const opt1 = headerRow == 1 ? " selected" : "";
+  const opt2 = headerRow == 2 ? " selected" : "";
   const d = document.createElement("div");
   d.className = "sheet-entry";
   d.innerHTML = `
     <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${entryCount}</span>
+      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${n}</span>
       <button class="btn-remove" onclick="this.closest('.sheet-entry').remove()">×</button>
     </div>
     <div>
@@ -815,9 +860,16 @@ function addSheetEntry(id = "", tab = "", name = "") {
       <label>Tab name (exact)</label>
       <input type="text" class="se-tab" value="${tab}" placeholder="WH Mumbai">
     </div>
-    <div style="grid-column:1/-1;">
+    <div>
       <label>Friendly name (optional)</label>
       <input type="text" class="se-name" value="${name}" placeholder="e.g. Mumbai WH">
+    </div>
+    <div>
+      <label>Header row</label>
+      <select class="se-hrow" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;cursor:pointer;">
+        <option value="1"${opt1}>Row 1 — headers on first row</option>
+        <option value="2"${opt2}>Row 2 — row 1 is a title/merge row</option>
+      </select>
     </div>
   `;
   document.getElementById("sheet-entries").appendChild(d);
@@ -831,7 +883,8 @@ function saveAndLoad() {
     const id   = e.querySelector(".se-id").value.trim();
     const tab  = e.querySelector(".se-tab").value.trim();
     const name = e.querySelector(".se-name").value.trim();
-    if (id && tab) sheets.push({ id, tab, name: name || tab });
+    const hrow = parseInt(e.querySelector(".se-hrow").value) || 1;
+    if (id && tab) sheets.push({ id, tab, name: name || tab, headerRow: hrow });
     else if (id || tab) valid = false;
   });
   if (!valid) { showSetupError("Fill in both Sheet ID and Tab for each row, or remove incomplete rows."); return; }
@@ -890,14 +943,16 @@ async function fetchSheet(sheet) {
   if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || `HTTP ${res.status}`); }
   const data = await res.json();
   const rows = data.values || [];
-  // Row 1 (index 0) = title/merged row, Row 2 (index 1) = actual headers, Row 3+ = data
-  if (rows.length < 3) return [];
+  // headerRow is 1-based: 1 = headers on row 1, 2 = headers on row 2 (row 1 is title/merge)
+  const hIdx = (sheet.headerRow || 1) - 1; // convert to 0-based index
+  const minRows = hIdx + 2; // need at least header row + 1 data row
+  if (rows.length < minRows) return [];
 
-  const rawHeaders = rows[1]; // ← row 2 is the header row
+  const rawHeaders = rows[hIdx];
   const mappedKeys = rawHeaders.map(mapHeader);
 
-  return rows.slice(2).map((row, i) => { // ← data starts from row 3
-    const obj = { _whName: sheet.name, _rowIndex: i + 3 };
+  return rows.slice(hIdx + 1).map((row, i) => {
+    const obj = { _whName: sheet.name, _rowIndex: i + hIdx + 2 };
     mappedKeys.forEach((key, ci) => { obj[key] = row[ci] || ""; });
 
     obj.channel        = obj.channel || sheet.name;
