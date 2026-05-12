@@ -4,1339 +4,831 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WH Tracker Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #f5f0e8;
-    --surface: #fdfaf5;
-    --surface2: #f0ebe0;
-    --border: rgba(120,95,60,0.12);
-    --border2: rgba(120,95,60,0.2);
-    --text: #2c2416;
-    --muted: #8a7560;
-    --radius: 10px;
-    --accent: #b5651d;
-    --accent-dim: rgba(181,101,29,0.1);
-    --accent-text: #8b4a13;
-    --amber: #c47d11; --amber-bg: #fdf3e0; --amber-text: #9a5e08;
-    --blue: #3d6b9e; --blue-bg: #e8f0f8; --blue-text: #2a4f7a;
-    --red: #a83232; --red-bg: #faeaea; --red-text: #7d2020;
-    --green: #3a7d52; --green-bg: #e6f4ec; --green-text: #265c3a;
-    --purple: #6b4fa0; --purple-bg: #f0ecfa; --purple-text: #4e3878;
-    --orange: #b55a1a; --orange-bg: #faeee4; --orange-text: #8a3f0e;
-    --teal: #2a7d7d; --teal-bg: #e4f4f4; --teal-text: #1a5e5e;
+    --bg:        #f5f0e8;
+    --surface:   #fdfaf5;
+    --surface2:  #f0ebe0;
+    --border:    #ddd5c4;
+    --accent:    #b5541c;
+    --accent2:   #e8a87c;
+    --text:      #2c2416;
+    --muted:     #7a6a55;
+    --green:     #4a7c59;
+    --amber:     #c9841a;
+    --red:       #b5251c;
+    --blue:      #2563a8;
+    --radius:    10px;
+    --shadow:    0 2px 12px rgba(44,36,22,.10);
   }
 
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 14px;
-    min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(181,101,29,0.05) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 10% 80%, rgba(58,125,82,0.04) 0%, transparent 60%);
-  }
-
-  /* ── AUTH ── */
-  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  .auth-card {
-    background: var(--surface);
-    border: 0.5px solid var(--border2);
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    width: 360px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .auth-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.6;
-  }
-  .auth-card .brand { font-size: 32px; margin-bottom: 1rem; }
-  .auth-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
-  .auth-card p { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; line-height: 1.6; font-family: 'DM Mono', monospace; }
-
-  /* ── SETUP ── */
-  #setup-screen { display: none; max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
-  #setup-screen h2 { font-size: 20px; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
-  #setup-screen p { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; line-height: 1.6; font-family: 'DM Mono', monospace; }
-  .sheet-entry {
-    background: var(--surface);
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius);
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .sheet-entry input {
-    width: 100%; padding: 7px 10px;
-    border: 0.5px solid var(--border);
-    border-radius: 6px;
-    font-size: 13px;
-    background: var(--surface2);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-  }
-  .sheet-entry input:focus { outline: none; border-color: var(--accent); }
-  .sheet-entry input::placeholder { color: var(--muted); }
-  .sheet-entry label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
-  .btn-add {
-    background: none;
-    border: 0.5px dashed var(--border2);
-    border-radius: var(--radius);
-    padding: 0.65rem;
-    width: 100%;
-    color: var(--muted);
-    font-size: 13px;
-    cursor: pointer;
-    margin-bottom: 1rem;
-    font-family: 'Syne', sans-serif;
-    transition: all 0.15s;
-  }
-  .btn-add:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
-  .btn-primary {
-    background: var(--accent);
-    color: #0f0f11;
-    border: none;
-    border-radius: 8px;
-    padding: 0.7rem 1.5rem;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    display: block;
-    width: 100%;
-    font-family: 'Syne', sans-serif;
-    letter-spacing: 0.01em;
-    transition: opacity 0.15s;
-  }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 6px; float: right; }
-  .tip {
-    background: var(--blue-bg);
-    border: 0.5px solid rgba(91,156,246,0.2);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 12px;
-    color: var(--blue-text);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-    font-family: 'DM Mono', monospace;
-  }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
 
   /* ── HEADER ── */
-  #app { display: none; }
   header {
     background: var(--surface);
-    border-bottom: 0.5px solid var(--border);
-    padding: 0 1.5rem;
-    height: 54px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    border-bottom: 2px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 16px;
+    height: 56px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow);
   }
-  .header-left { display: flex; align-items: center; gap: 10px; }
-  .header-brand { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
-  .header-brand span { color: var(--accent); }
-  .header-right { display: flex; align-items: center; gap: 8px; }
-  .btn-sm {
-    background: none;
-    border: 0.5px solid var(--border2);
-    border-radius: 6px;
-    padding: 5px 12px;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    transition: all 0.15s;
-  }
-  .btn-sm:hover { background: var(--surface2); border-color: var(--accent); }
-  .btn-export {
-    background: var(--accent-dim);
-    border: 0.5px solid rgba(181,101,29,0.25);
-    border-radius: 6px;
-    padding: 5px 12px;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--accent);
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    transition: all 0.15s;
-  }
-  .btn-export:hover { background: rgba(181,101,29,0.18); }
+  .brand { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -.5px; }
+  .brand span { color: var(--text); font-weight: 400; }
+  header .spacer { flex: 1; }
+  #userInfo { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  #userInfo img { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--accent2); }
+  #signOutBtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: background .15s; }
+  #signOutBtn:hover { background: var(--border); }
 
-  main { max-width: 1500px; margin: 0 auto; padding: 1.25rem 1.5rem; }
+  /* ── AUTH SCREEN ── */
+  #authScreen {
+    display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 56px);
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
+  }
+  .auth-card .icon { font-size: 48px; margin-bottom: 16px; }
+  .auth-card h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .auth-card p { color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+
+  /* ── SETUP SCREEN ── */
+  #setupScreen { padding: 32px 24px; max-width: 860px; margin: 0 auto; }
+  #setupScreen h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  #setupScreen .sub { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+
+  .sheet-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  .sheet-entry {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; display: grid; grid-template-columns: 1fr 2fr 1.2fr auto auto; gap: 10px; align-items: center;
+  }
+  .sheet-entry input, .sheet-entry select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 10px; font-size: 13px; color: var(--text); width: 100%;
+    transition: border-color .15s;
+  }
+  .sheet-entry input:focus, .sheet-entry select:focus { outline: none; border-color: var(--accent); }
+  .sheet-entry label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #93401a; }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: #fff0ee; border: 1px solid #f5c5c0; color: var(--red); }
+  .btn-danger:hover { background: #fde0dc; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-icon { padding: 7px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; color: var(--text); transition: background .15s; }
+  .btn-icon:hover { background: var(--border); }
+
+  .setup-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+
+  /* ── MAIN LAYOUT ── */
+  #mainScreen { display: none; }
+  .layout { display: flex; gap: 0; }
+
+  /* ── FILTERS SIDEBAR ── */
+  .sidebar {
+    width: 240px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 16px; display: flex; flex-direction: column; gap: 16px;
+    height: calc(100vh - 56px); overflow-y: auto; position: sticky; top: 56px;
+  }
+  .sidebar h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 4px; }
+  .search-box { position: relative; }
+  .search-box input { width: 100%; padding: 8px 10px 8px 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 13px; color: var(--text); }
+  .search-box input:focus { outline: none; border-color: var(--accent); }
+  .search-box .ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
+
+  .filter-section { border-top: 1px solid var(--border); padding-top: 12px; }
+  .filter-chips { display: flex; flex-direction: column; gap: 4px; }
+  .chip {
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid transparent; transition: all .12s; color: var(--text); background: transparent;
+    text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chip:hover { background: var(--surface2); border-color: var(--border); }
+  .chip.active { background: #fbe8de; border-color: var(--accent2); color: var(--accent); font-weight: 600; }
+  .chip-all { font-weight: 600; }
+
+  .date-range { display: flex; flex-direction: column; gap: 6px; }
+  .date-range input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; background: var(--bg); color: var(--text); width: 100%; }
+  .date-range input:focus { outline: none; border-color: var(--accent); }
+  .date-label { font-size: 11px; color: var(--muted); }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow: hidden; padding: 20px 20px 40px; }
 
   /* ── STAT CARDS ── */
-  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .stat {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.1rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow);
   }
-  .stat:hover { border-color: var(--border2); }
-  .stat-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 6px;
-    font-family: 'DM Mono', monospace;
-  }
-  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
-  .stat-value.accent { color: var(--accent); }
-  .stat-value.amber  { color: var(--amber); }
-  .stat-value.red    { color: var(--red); }
-  .stat-value.blue   { color: var(--blue); }
-  .stat-value.green  { color: var(--green); }
-  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
-  .stat-dot {
-    position: absolute; top: 1rem; right: 1rem;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    opacity: 0.35;
-  }
-
-  /* ── FILTERS ── */
-  .filters {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.9rem 1rem;
-    margin-bottom: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: flex-start;
-  }
-  .filters input[type=text], .filters input[type=date] {
-    padding: 6px 10px;
-    border: 0.5px solid var(--border);
-    border-radius: 6px;
-    font-size: 13px;
-    background: var(--surface2);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-width: 140px;
-  }
-  .filters input:focus { outline: none; border-color: var(--accent); }
-  .search-wrap { position: relative; flex: 1; min-width: 200px; }
-  .search-wrap input { width: 100%; padding-left: 30px; }
-  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; pointer-events: none; }
-  .filter-label { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 7px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
-  .btn-clear { background: none; border: none; font-size: 12px; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; }
-  .btn-clear:hover { color: var(--text); background: var(--surface2); }
-
-  /* ── MULTI-SELECT ── */
-  .ms-wrap { position: relative; min-width: 150px; }
-  .ms-trigger {
-    display: flex; align-items: center; justify-content: space-between; gap: 6px;
-    padding: 6px 10px;
-    border: 0.5px solid var(--border);
-    border-radius: 6px;
-    font-size: 13px;
-    background: var(--surface2);
-    color: var(--text);
-    cursor: pointer;
-    min-height: 32px;
-    white-space: nowrap;
-    user-select: none;
-    font-family: 'DM Mono', monospace;
-    transition: border-color 0.15s;
-  }
-  .ms-trigger:hover { border-color: var(--accent); }
-  .ms-trigger.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
-  .ms-trigger .ms-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-  .ms-trigger .ms-arrow { font-size: 10px; color: var(--muted); flex-shrink: 0; transition: transform 0.15s; }
-  .ms-trigger.open .ms-arrow { transform: rotate(180deg); }
-  .ms-count { background: var(--accent); color: #fdfaf5; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
-  .ms-dropdown {
-    display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
-    background: var(--surface);
-    border: 0.5px solid var(--border2);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    min-width: 210px; max-height: 240px; overflow-y: auto;
-  }
-  .ms-dropdown.open { display: block; }
-  .ms-search { padding: 8px 10px; border-bottom: 0.5px solid var(--border); }
-  .ms-search input {
-    width: 100%; padding: 5px 8px;
-    border: 0.5px solid var(--border);
-    border-radius: 5px;
-    font-size: 12px;
-    background: var(--surface2);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-  }
-  .ms-search input:focus { outline: none; border-color: var(--accent); }
-  .ms-option { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-family: 'DM Mono', monospace; }
-  .ms-option:hover { background: var(--surface2); }
-  .ms-option input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
-  .ms-option label { cursor: pointer; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ms-actions { padding: 6px 10px; border-top: 0.5px solid var(--border); display: flex; gap: 8px; }
-  .ms-btn { background: none; border: none; font-size: 11px; color: var(--accent); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-family: 'DM Mono', monospace; }
-  .ms-btn:hover { background: var(--accent-dim); }
-  .ms-empty { padding: 12px; text-align: center; font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .stat-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 6px; }
+  .stat-card .value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .stat-card.red .value { color: var(--red); }
+  .stat-card.amber .value { color: var(--amber); }
+  .stat-card.green .value { color: var(--green); }
+  .stat-card.blue .value { color: var(--blue); }
 
   /* ── TABLE ── */
-  .table-wrap {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; box-shadow: var(--shadow); max-height: calc(100vh - 280px); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+  thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface2); border-bottom: 2px solid var(--border);
+    padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px; color: var(--muted); white-space: nowrap;
+    cursor: pointer; user-select: none;
   }
-  .table-meta {
-    padding: 0.75rem 1rem;
-    border-bottom: 0.5px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .table-meta span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-  .tbl-container { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th {
-    padding: 9px 12px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    border-bottom: 0.5px solid var(--border);
-    background: var(--surface2);
-    white-space: nowrap;
-    cursor: pointer;
-    user-select: none;
-    font-family: 'DM Mono', monospace;
-    transition: color 0.15s;
-  }
-  th:hover { color: var(--text); }
-  th.sorted { color: var(--accent); }
-  th .sort-icon { margin-left: 3px; opacity: 0.4; }
-  th.sorted .sort-icon { opacity: 1; }
-  td {
-    padding: 9px 12px;
-    border-bottom: 0.5px solid var(--border);
-    color: var(--text);
-    white-space: nowrap;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  tr.overdue td { background: #fdf3f3; }
-  tr.overdue td:first-child { border-left: 2px solid var(--red); }
-  tr.priority td:first-child { border-left: 2px solid var(--amber); }
+  thead th:hover { background: var(--border); color: var(--text); }
+  thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
 
-  /* ── BADGES ── */
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; font-family: 'DM Mono', monospace; letter-spacing: 0.02em; }
-  .badge-packed       { background: var(--green-bg);  color: var(--green-text); }
-  .badge-dispatched   { background: var(--accent-dim); color: var(--accent-text); border: 0.5px solid rgba(181,101,29,0.2); }
-  .badge-pending      { background: var(--amber-bg);  color: var(--amber-text); }
-  .badge-hold         { background: var(--red-bg);    color: var(--red-text); }
-  .badge-inprogress   { background: var(--blue-bg);   color: var(--blue-text); }
-  .badge-rto          { background: var(--purple-bg); color: var(--purple-text); }
-  .badge-default      { background: var(--surface2); color: var(--muted); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:hover { background: #fef7f0; }
+  tbody tr.overdue { border-left: 3px solid var(--red); background: #fff5f4; }
+  tbody tr.priority { border-left: 3px solid var(--amber); background: #fffbf0; }
+  tbody tr.overdue:hover { background: #fee8e6; }
+  tbody tr.priority:hover { background: #fff3d6; }
+  td { padding: 9px 12px; vertical-align: middle; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td.wh-col { font-weight: 600; color: var(--accent); white-space: nowrap; }
 
-  .priority-pill { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; background: var(--amber-bg); color: var(--amber); border: 0.5px solid rgba(240,180,41,0.3); font-family: 'DM Mono', monospace; }
-  .channel-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; background: var(--surface2); border: 0.5px solid var(--border2); color: var(--muted); font-family: 'DM Mono', monospace; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-green  { background: #dff0e5; color: #2d6e43; }
+  .badge-amber  { background: #fef3d7; color: #8a5a0a; }
+  .badge-red    { background: #fde8e6; color: #8a1c18; }
+  .badge-blue   { background: #dceeff; color: #1a4d8a; }
+  .badge-grey   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .badge-purple { background: #ede8fa; color: #5b3fa8; }
 
-  /* ── PAGINATION ── */
-  .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-top: 0.5px solid var(--border);
-  }
-  .pagination span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-  .page-btns { display: flex; gap: 4px; }
-  .page-btn {
-    padding: 4px 10px;
-    border: 0.5px solid var(--border);
-    border-radius: 5px;
-    background: none;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    transition: all 0.15s;
-  }
-  .page-btn:hover { background: var(--surface2); border-color: var(--border2); }
-  .page-btn.active { background: var(--accent); color: #fdfaf5; border-color: var(--accent); font-weight: 700; }
-  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .toolbar .count { font-size: 13px; color: var(--muted); margin-left: auto; }
+  .toolbar .btn-settings { margin-left: 4px; }
 
-  /* ── LOADING / ERROR ── */
-  .loading-bar { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%; animation: loadbar 1.2s infinite; }
-  @keyframes loadbar { 0% { background-position: -100% 0; } 100% { background-position: 200% 0; } }
-  .center-msg { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 13px; font-family: 'DM Mono', monospace; }
-  .error-msg { background: var(--red-bg); border: 0.5px solid rgba(240,106,106,0.2); color: var(--red-text); border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; margin-bottom: 1rem; font-family: 'DM Mono', monospace; }
-  .spinner { display: block; width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 1rem; }
+  /* ── LOADING / EMPTY ── */
+  .loading { padding: 60px; text-align: center; color: var(--muted); }
+  .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { padding: 60px; text-align: center; color: var(--muted); font-size: 15px; }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; z-index: 9999; display: none; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
 
   /* ── MODAL ── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 0.5px solid var(--border2);
-    border-radius: 14px;
-    padding: 1.5rem;
-    width: 580px;
-    max-width: 95vw;
-    max-height: 82vh;
-    overflow-y: auto;
-    position: relative;
-  }
-  .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); border-radius: 14px 14px 0 0; opacity: 0.6; }
-  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em; }
-  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-  .modal-field { padding: 8px 0; border-bottom: 0.5px solid var(--border); }
-  .modal-field .mf-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.07em; font-family: 'DM Mono', monospace; }
-  .modal-field .mf-value { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; }
-  .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 6px; font-size: 16px; cursor: pointer; color: var(--muted); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .modal-close:hover { color: var(--text); border-color: var(--border2); }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--surface); border-radius: 16px; padding: 32px; max-width: 500px; width: 95%; box-shadow: 0 12px 48px rgba(0,0,0,.2); }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal p { color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-  @media (max-width: 700px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    main { padding: 1rem 0.75rem; }
-    header { padding: 0 0.75rem; }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .sheet-entry { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
 
-<!-- ══════════ AUTH ══════════ -->
-<div id="auth-screen">
+<header>
+  <div class="brand">WH <span>Tracker</span></div>
+  <div class="spacer"></div>
+  <div id="userInfo" style="display:none">
+    <img id="userAvatar" src="" alt="">
+    <span id="userName"></span>
+    <button id="signOutBtn" onclick="signOut()">Sign out</button>
+  </div>
+</header>
+
+<!-- AUTH -->
+<div id="authScreen">
   <div class="auth-card">
-    <div class="brand">🏭</div>
-    <h1>WH Tracker</h1>
-    <p>Sign in with Google to connect your warehouse sheets.</p>
-    <div id="g_id_onload"
-      data-client_id="463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com"
-      data-callback="handleCredential"
-      data-auto_prompt="false">
-    </div>
-    <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="outline"
-      data-text="sign_in_with"
-      data-shape="rectangular"
-      data-logo_alignment="left"
-      data-width="280">
-    </div>
-    <p style="margin-top:1rem; font-size:11px; color:var(--muted);">First time? You'll configure your sheets after sign-in.</p>
+    <div class="icon">🏭</div>
+    <h2>WH Tracker Dashboard</h2>
+    <p>Sign in with your Google account to connect your warehouse sheets and view live dispatch data.</p>
+    <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleCredential" data-auto_prompt="false"></div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
   </div>
 </div>
 
-<!-- ══════════ SETUP ══════════ -->
-<div id="setup-screen">
-  <h2>🏭 Configure WH sheets</h2>
-  <p>Add each warehouse's Google Sheet below. Find the Sheet ID in the URL:<br>
-  <code style="font-size:12px; background:var(--surface2); padding:2px 6px; border-radius:4px; color:var(--accent);">docs.google.com/spreadsheets/d/<strong>SHEET_ID_HERE</strong>/edit</code></p>
+<!-- SETUP -->
+<div id="setupScreen" style="display:none">
+  <h2>⚙️ Warehouse Sheet Setup</h2>
+  <p class="sub">Add each WH tab below. The friendly name becomes the "Dispatch WH" column in the dashboard.</p>
 
-  <div class="tip">
-    ℹ️ Tab name must match exactly (case-sensitive). Headers with running totals like "Units 1405362" are auto-matched by prefix — just make sure they start with the right keyword.
+  <div class="sheet-list" id="sheetList"></div>
+
+  <div class="setup-actions">
+    <button class="btn btn-secondary" onclick="addSheetEntry()">＋ Add Warehouse</button>
+    <button class="btn btn-primary" onclick="loadAll()">▶ Load Dashboard</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportConfig()">⬇ Export config</button>
+    <button class="btn btn-secondary btn-sm" onclick="importConfigClick()">⬆ Import config</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importConfig(event)">
   </div>
-
-  <div id="sheet-entries"></div>
-  <button class="btn-add" onclick="addSheetEntry()">+ Add another warehouse / tab</button>
-  <div id="setup-error" class="error-msg" style="display:none;"></div>
-  <button class="btn-primary" onclick="saveAndLoad()">Load WH data →</button>
-  <p style="font-size:11px; color:var(--muted); margin-top:0.75rem; text-align:center;">Config is saved locally in this browser only.</p>
+  <p style="color:var(--muted);font-size:12px">Configs are saved in localStorage so you only need to set up once.</p>
 </div>
 
-<!-- ══════════ MAIN APP ══════════ -->
-<div id="app">
-  <div id="loading-bar" class="loading-bar" style="display:none;"></div>
-  <header>
-    <div class="header-left">
-      <span class="header-brand">🏭 WH <span>Tracker</span></span>
-      <span id="last-refresh" style="font-size:11px; color:var(--muted); font-family:'DM Mono',monospace;"></span>
-    </div>
-    <div class="header-right">
-      <button class="btn-sm" onclick="refreshData()">↻ Refresh</button>
-      <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
-      <button class="btn-sm" onclick="openSetup()">⚙ Sheets</button>
-      <button class="btn-sm" onclick="signOut()">Sign out</button>
-    </div>
-  </header>
-
-  <main>
-    <div id="app-error" class="error-msg" style="display:none;"></div>
-
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-dot"></div>
-        <div class="stat-label">Total POs</div>
-        <div class="stat-value accent" id="s-total">—</div>
-        <div class="stat-sub" id="s-total-sub"> </div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Pending Packing</div>
-        <div class="stat-value amber" id="s-pending">—</div>
-        <div class="stat-sub" id="s-pending-sub"> </div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Packed / RTD</div>
-        <div class="stat-value green" id="s-packed">—</div>
-        <div class="stat-sub" id="s-packed-sub"> </div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Dispatched</div>
-        <div class="stat-value accent" id="s-dispatched">—</div>
-        <div class="stat-sub" id="s-dispatched-sub"> </div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Overdue Pickups</div>
-        <div class="stat-value red" id="s-overdue">—</div>
-        <div class="stat-sub">past targeted pickup</div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters">
-      <span class="filter-label">Filter</span>
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="f-search" placeholder="PO name, LR, gatepass, channel…" oninput="applyFilters()">
-      </div>
-
-      <!-- Channel -->
-      <div class="ms-wrap" id="ms-channel-wrap">
-        <div class="ms-trigger" id="ms-channel-trigger" onclick="toggleMs('channel')">
-          <span class="ms-label" id="ms-channel-label">All channels</span>
-          <span class="ms-arrow">▼</span>
-        </div>
-        <div class="ms-dropdown" id="ms-channel-dd">
-          <div class="ms-search"><input type="text" placeholder="Search…" oninput="filterMsOptions('channel', this.value)"></div>
-          <div id="ms-channel-opts"></div>
-          <div class="ms-actions">
-            <button class="ms-btn" onclick="selectAllMs('channel')">All</button>
-            <button class="ms-btn" onclick="clearMs('channel')">None</button>
-          </div>
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <h3>🔍 Search</h3>
+        <div class="search-box" style="margin-top:8px">
+          <span class="ico">⌕</span>
+          <input type="text" id="searchInput" placeholder="PO, LR, Gatepass…" oninput="applyFilters()">
         </div>
       </div>
 
-      <!-- Packing Status -->
-      <div class="ms-wrap" id="ms-pstatus-wrap">
-        <div class="ms-trigger" id="ms-pstatus-trigger" onclick="toggleMs('pstatus')">
-          <span class="ms-label" id="ms-pstatus-label">All packing status</span>
-          <span class="ms-arrow">▼</span>
-        </div>
-        <div class="ms-dropdown" id="ms-pstatus-dd">
-          <div id="ms-pstatus-opts"></div>
-          <div class="ms-actions">
-            <button class="ms-btn" onclick="selectAllMs('pstatus')">All</button>
-            <button class="ms-btn" onclick="clearMs('pstatus')">None</button>
-          </div>
+      <div class="filter-section">
+        <h3>🏭 Dispatch WH</h3>
+        <div class="filter-chips" id="whChips"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>📦 Channel</h3>
+        <div class="filter-chips" id="channelChips"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>🔧 Packing Status</h3>
+        <div class="filter-chips" id="packingChips"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>🚚 Dispatch Status</h3>
+        <div class="filter-chips" id="dispatchChips"></div>
+      </div>
+
+      <div class="filter-section">
+        <h3>📅 GP Received Date</h3>
+        <div class="date-range">
+          <div class="date-label">From</div>
+          <input type="date" id="dateFrom" onchange="applyFilters()">
+          <div class="date-label">To</div>
+          <input type="date" id="dateTo" onchange="applyFilters()">
         </div>
       </div>
 
-      <!-- Dispatch Status -->
-      <div class="ms-wrap" id="ms-dstatus-wrap">
-        <div class="ms-trigger" id="ms-dstatus-trigger" onclick="toggleMs('dstatus')">
-          <span class="ms-label" id="ms-dstatus-label">All dispatch status</span>
-          <span class="ms-arrow">▼</span>
-        </div>
-        <div class="ms-dropdown" id="ms-dstatus-dd">
-          <div id="ms-dstatus-opts"></div>
-          <div class="ms-actions">
-            <button class="ms-btn" onclick="selectAllMs('dstatus')">All</button>
-            <button class="ms-btn" onclick="clearMs('dstatus')">None</button>
-          </div>
-        </div>
+      <div style="padding-top:8px">
+        <button class="btn btn-secondary btn-sm" style="width:100%" onclick="clearFilters()">✕ Clear all filters</button>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="toolbar">
+        <button class="btn btn-secondary btn-sm" onclick="showSetup()">⚙ Edit sheets</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadAll()">↻ Refresh</button>
+        <span class="count" id="rowCount"></span>
       </div>
 
-      <!-- Location -->
-      <div class="ms-wrap" id="ms-loc-wrap">
-        <div class="ms-trigger" id="ms-loc-trigger" onclick="toggleMs('loc')">
-          <span class="ms-label" id="ms-loc-label">All locations</span>
-          <span class="ms-arrow">▼</span>
-        </div>
-        <div class="ms-dropdown" id="ms-loc-dd">
-          <div class="ms-search"><input type="text" placeholder="Search…" oninput="filterMsOptions('loc', this.value)"></div>
-          <div id="ms-loc-opts"></div>
-          <div class="ms-actions">
-            <button class="ms-btn" onclick="selectAllMs('loc')">All</button>
-            <button class="ms-btn" onclick="clearMs('loc')">None</button>
-          </div>
-        </div>
+      <div class="table-wrap" id="tableWrap">
+        <div class="loading"><div class="spinner"></div><br>Loading warehouse data…</div>
       </div>
-
-      <input type="date" id="f-gp-from" onchange="applyFilters()" title="Gatepass received from">
-      <input type="date" id="f-gp-to"   onchange="applyFilters()" title="Gatepass received to">
-      <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
-    </div>
-
-    <!-- Table -->
-    <div class="table-wrap">
-      <div class="table-meta">
-        <span id="row-count">— rows</span>
-        <span id="sheet-tabs"></span>
-      </div>
-      <div class="tbl-container">
-        <table id="wh-table">
-          <thead>
-            <tr>
-              <th onclick="sortBy('channel')"      data-col="channel">Channel <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('location')"     data-col="location">Location <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('poName')"       data-col="poName">PO Name <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('emailSubject')" data-col="emailSubject">Email Subject <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('gpDate')"       data-col="gpDate">GP Received <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('gpNo')"         data-col="gpNo">Gatepass No <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('units')"        data-col="units">Units <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('targetedPickup')" data-col="targetedPickup">Target Pickup <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('packingStatus')" data-col="packingStatus">Packing Status <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('status')"       data-col="status">Status <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('rtdDate')"      data-col="rtdDate">RTD Date <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('dispatchDate')" data-col="dispatchDate">Dispatch Date <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('packedQty')"    data-col="packedQty">Packed Qty <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('boxes')"        data-col="boxes">Boxes <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('deliveryPartner')" data-col="deliveryPartner">Delivery Partner <span class="sort-icon">↕</span></th>
-              <th onclick="sortBy('lr')"           data-col="lr">LR / Docket <span class="sort-icon">↕</span></th>
-            </tr>
-          </thead>
-          <tbody id="wh-tbody">
-            <tr><td colspan="16" class="center-msg"><div class="spinner"></div>Loading warehouse data…</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination">
-        <span id="page-info">—</span>
-        <div class="page-btns" id="page-btns"></div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- ══════════ MODAL ══════════ -->
-<div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('detail-modal').classList.remove('open')">×</button>
-    <h2 id="modal-po-name">Row Details</h2>
-    <div class="modal-grid" id="modal-body"></div>
+    </main>
   </div>
 </div>
+
+<div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════
-const OAUTH_CLIENT_ID = "463035787922-tpie873ujm0b03cousnoan1np4t7jhvs.apps.googleusercontent.com";
+// ─────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 
-// Prefix-based column mapping.
-// For each header, we lowercase + trim it, then check if it STARTS WITH any of the keys.
-// Order matters — more specific prefixes should come first.
-const PREFIX_MAP = [
-  // Serial number — many variants
-  { prefix: "serial no",        key: "srNo" },
-  { prefix: "sl no",            key: "srNo" },
-  { prefix: "sr no",            key: "srNo" },
-  { prefix: "sr.",              key: "srNo" },
-  // SI alone (some sheets use it as serial; skip if it maps to something useful)
-  // Channel
-  { prefix: "channel name",     key: "channel" },
-  { prefix: "channel.",         key: "channel" },
-  { prefix: "channel",          key: "channel" },
-  // Location — "party location", "location", etc.
-  { prefix: "party location",   key: "location" },
-  { prefix: "location",         key: "location" },
-  // Email / PO identity
-  { prefix: "email subject",    key: "emailSubject" },
-  { prefix: "email",            key: "emailSubject" },
-  { prefix: "po name",          key: "poName" },
-  { prefix: "po no",            key: "poName" },
-  { prefix: "po number",        key: "poName" },
-  // Gatepass / Picklist — more specific first
-  { prefix: "gatepass no./picklist no", key: "gpNo" },
-  { prefix: "gatepass no./picklist",    key: "gpNo" },
-  { prefix: "gatepass received on",     key: "gpDate" },
-  { prefix: "gatepass received",        key: "gpDate" },
-  { prefix: "gatepass no.",      key: "gpNo" },
-  { prefix: "gatepass no",       key: "gpNo" },
-  { prefix: "gatepass type",     key: "gpType" },
-  { prefix: "gatepass",          key: "gpNo" },
-  { prefix: "picklist/gp date",  key: "gpDate" },
-  { prefix: "picklist status",   key: "picklistStatus" },
-  { prefix: "picklist assign",   key: "picklistAssign" },
-  // Invoice
-  { prefix: "invoice number",    key: "invoiceNo" },
-  { prefix: "invoice no",        key: "invoiceNo" },
-  { prefix: "inv date",          key: "invoiceDate" },
-  { prefix: "inv value",         key: "invoiceValue" },
-  // Quantities — prefix handles running totals like "Units 1405362"
-  { prefix: "units",             key: "units" },
-  { prefix: "qty",               key: "units" },
-  { prefix: "packed/ dispatch  qty", key: "packedQty" },
-  { prefix: "packed/ dispatch qty",  key: "packedQty" },
-  { prefix: "packed/dispatch qty",   key: "packedQty" },
-  { prefix: "packed qty",        key: "packedQty" },
-  { prefix: "disp qty",          key: "packedQty" },
-  { prefix: "close qty",         key: "closeQty" },
-  // Boxes — "no. of box", "boxes"
-  { prefix: "no. of box",        key: "boxes" },
-  { prefix: "no. of boxes",      key: "boxes" },
-  { prefix: "boxes",             key: "boxes" },
-  // Barcoding / Combo
-  { prefix: "bar coding",        key: "barcodingQty" },
-  { prefix: "barcoding qty",     key: "barcodingQty" },
-  { prefix: "barcoding",         key: "barcodingQty" },
-  { prefix: "combo set qty",     key: "comboQty" },
-  { prefix: "combo set",         key: "comboQty" },
-  // Scheduling
-  { prefix: "targeted pickup date (eta)", key: "targetedPickup" },
-  { prefix: "targeted pickup date",       key: "targetedPickup" },
-  { prefix: "targeted pickup",    key: "targetedPickup" },
-  { prefix: "target pickup",      key: "targetedPickup" },
-  { prefix: "priority level",     key: "priority" },
-  { prefix: "priority",           key: "priority" },
-  // Status — packing before plain status
-  { prefix: "packing status",     key: "packingStatus" },
-  { prefix: "re-check status",    key: "recheckStatus" },
-  { prefix: "status",             key: "status" },
-  // Dates
-  { prefix: "rtd date",           key: "rtdDate" },
-  { prefix: "dispatch date",      key: "dispatchDate" },
-  // Delivery / tracking
-  { prefix: "delivery partner",   key: "deliveryPartner" },
-  { prefix: "tracking id",        key: "lr" },
-  { prefix: "tracking no",        key: "lr" },
-  { prefix: "lr",                 key: "lr" },
-  // Misc / remarks
-  { prefix: "additional activity", key: "activityRemarks" },
-  { prefix: "remaks",             key: "remarks" },
-  { prefix: "remarks",            key: "remarks" },
-  { prefix: "start time",         key: "startTime" },
-  { prefix: "end time",           key: "endTime" },
-  { prefix: "duration in min",    key: "durationMin" },
-  { prefix: "duration in hour",   key: "durationHr" },
-  { prefix: "duration bucket",    key: "durationBucket" },
-  { prefix: "duration",           key: "durationMin" },
-  { prefix: "aging",              key: "aging" },
-  { prefix: "orders cutoff",      key: "ordersCutoff" },
-  { prefix: "gate pass update",   key: "gpUpdate" },
-  { prefix: "include in pivot",   key: "inPivot" },
-];
-
-function mapHeader(rawHeader) {
-  const h = (rawHeader || "").toLowerCase().trim();
-  for (const { prefix, key } of PREFIX_MAP) {
-    if (h.startsWith(prefix)) return key;
-  }
-  return h; // fallback: use raw header as-is
-}
-
-// ═══════════════════════════════════════
-//  STATUS NORMALISATION
-// ═══════════════════════════════════════
-function normalisePackingStatus(raw) {
-  const s = (raw || "").trim().toLowerCase();
-  if (!s) return "";
-  if (s.includes("done") || s.includes("complete") || s.includes("packed")) return "Packed";
-  if (s.includes("in progress") || s.includes("ongoing") || s.includes("wip")) return "In Progress";
-  if (s.includes("pending") || s.includes("not started")) return "Pending";
-  if (s.includes("hold")) return "Hold";
-  return raw.trim().replace(/\b\w/g, c => c.toUpperCase());
-}
-
-function normaliseStatus(raw) {
-  const s = (raw || "").trim().toLowerCase();
-  if (!s) return "";
-  if (s.includes("dispatch") && (s.includes("done") || s.includes("complete") || s === "dispatched")) return "Dispatched";
-  if (s.includes("dispatch") && s.includes("pending")) return "Dispatch Pending";
-  if (s.includes("rtd") || s.includes("ready to dispatch")) return "RTD";
-  if (s.includes("hold")) return "Hold";
-  if (s.includes("rto")) return "RTO";
-  if (s.includes("deliver")) return "Delivered";
-  if (s.includes("pending")) return "Pending";
-  return raw.trim().replace(/\b\w/g, c => c.toUpperCase());
-}
-
-// ═══════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════
 let accessToken = null;
 let allRows = [];
 let filteredRows = [];
-let currentPage = 1;
-const PAGE_SIZE = 100;
-let sortCol = "gpDate";
-let sortDir = -1;
+let sortCol = null, sortDir = 1;
 
-const msState = { channel: new Set(), pstatus: new Set(), dstatus: new Set(), loc: new Set() };
+// ─────────────────────────────────────────────────────────
+// PREFIX MAP — maps header prefixes → canonical field names
+// ─────────────────────────────────────────────────────────
+const PREFIX_MAP = [
+  // Serial / row number
+  { prefixes: ['sr no', 'sr. no', 'serial no', 'sl no', 'sl. no', 'si'], field: 'srNo' },
+  // Channel
+  { prefixes: ['channel name', 'channel name.'], field: 'channel' },
+  // Location
+  { prefixes: ['location', 'party location'], field: 'location' },
+  // Email subject
+  { prefixes: ['email subject'], field: 'emailSubject' },
+  // PO name
+  { prefixes: ['po name', 'po no', 'po no.'], field: 'poName' },
+  // Gatepass / Picklist received
+  { prefixes: ['gatepass received on', 'gatepass received', 'picklist/gp date'], field: 'gpReceivedOn' },
+  // Gatepass No
+  { prefixes: ['gatepass no.', 'gatepass no./picklist no', 'gatepass no'], field: 'gpNo' },
+  // Gatepass Type
+  { prefixes: ['gatepass type'], field: 'gpType' },
+  // Units (has running total suffix)
+  { prefixes: ['units'], field: 'units' },
+  // Targeted Pickup Date
+  { prefixes: ['targeted pickup date (eta)', 'targeted pickup date'], field: 'targetedPickupDate' },
+  // Priority
+  { prefixes: ['priority level'], field: 'priority' },
+  // Barcoding qty
+  { prefixes: ['bar coding qnty', 'barcoding qty', 'barcoding qnty'], field: 'barcodingQty' },
+  // Combo set qty
+  { prefixes: ['combo set qty', 'combo set qnty'], field: 'comboSetQty' },
+  // Additional remarks
+  { prefixes: ['additional activity remarks'], field: 'additionalRemarks' },
+  // Packing status
+  { prefixes: ['packing status'], field: 'packingStatus' },
+  // Status (dispatch)
+  { prefixes: ['status'], field: 'status' },
+  // RTD Date
+  { prefixes: ['rtd date'], field: 'rtdDate' },
+  // Dispatch Date
+  { prefixes: ['dispatch date', 'dispatch date'], field: 'dispatchDate' },
+  // Packed/Dispatch Qty (has running total suffix)
+  { prefixes: ['packed/ dispatch  qty', 'packed/ dispatch qty', 'packed/dispatch qty', 'qty'], field: 'packedQty' },
+  // Boxes
+  { prefixes: ['no. of box', 'boxes', 'no.of box'], field: 'boxes' },
+  // Delivery partner
+  { prefixes: ['delivery partner'], field: 'deliveryPartner' },
+  // LR / Tracking ID
+  { prefixes: ['lr', 'tracking id', 'tracking no', 'docket no'], field: 'lr' },
+  // Remarks
+  { prefixes: ['remarks'], field: 'remarks' },
+  // Picklist status
+  { prefixes: ['picklist status'], field: 'picklistStatus' },
+  // Invoice
+  { prefixes: ['invoice number', 'invoice no', 'inv date', 'inv value'], field: 'invoiceNo' },
+  // Recheck
+  { prefixes: ['re-check status'], field: 'recheck' },
+  // Aging
+  { prefixes: ['aging'], field: 'aging' },
+  // Close qty
+  { prefixes: ['close qty'], field: 'closeQty' },
+  // Start / End time
+  { prefixes: ['start time'], field: 'startTime' },
+  { prefixes: ['end time'], field: 'endTime' },
+];
 
-// ═══════════════════════════════════════
-//  AUTH
-// ═══════════════════════════════════════
+function mapHeader(raw) {
+  const norm = raw.trim().toLowerCase();
+  for (const entry of PREFIX_MAP) {
+    for (const p of entry.prefixes) {
+      if (norm === p || norm.startsWith(p + ' ') || norm.startsWith(p + '\t')) {
+        return entry.field;
+      }
+    }
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// STATUS NORMALISATION
+// ─────────────────────────────────────────────────────────
+function normPacking(v) {
+  if (!v) return '';
+  const l = v.toLowerCase().trim();
+  if (['done','complete','completed','packed'].includes(l)) return 'Packed';
+  if (['wip','in progress','in-progress','inprogress'].includes(l)) return 'In Progress';
+  if (['pending','not started','hold','on hold',''].includes(l) || l === '') return 'Pending';
+  if (['partial'].includes(l)) return 'Partial';
+  return v.trim();
+}
+
+function normStatus(v) {
+  if (!v) return '';
+  const l = v.toLowerCase().trim();
+  if (['dispatched','dispatch','shipped','delivered'].includes(l)) return 'Dispatched';
+  if (['rtd','ready to dispatch','ready'].includes(l)) return 'RTD';
+  if (['packed','packing done'].includes(l)) return 'Packed';
+  if (['pending','','hold'].includes(l) || l === '') return 'Pending';
+  if (['wip','in progress'].includes(l)) return 'WIP';
+  return v.trim();
+}
+
+function packBadge(v) {
+  const cls = { 'Packed':'badge-green','In Progress':'badge-amber','Partial':'badge-blue','Pending':'badge-grey' };
+  return `<span class="badge ${cls[v]||'badge-grey'}">${v||'—'}</span>`;
+}
+function statusBadge(v) {
+  const cls = { 'Dispatched':'badge-green','RTD':'badge-purple','Packed':'badge-blue','WIP':'badge-amber','Pending':'badge-grey' };
+  return `<span class="badge ${cls[v]||'badge-grey'}">${v||'—'}</span>`;
+}
+function priorityBadge(v) {
+  if (!v || v.trim() === '') return '';
+  return `<span class="badge badge-red">⚑ ${v}</span>`;
+}
+
+// ─────────────────────────────────────────────────────────
+// GOOGLE AUTH
+// ─────────────────────────────────────────────────────────
 function handleCredential(response) {
-  const scope = "https://www.googleapis.com/auth/spreadsheets.readonly";
-  const redirectUri = window.location.href.split("?")[0].split("#")[0];
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
-  window.location.href = authUrl;
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  document.getElementById('userName').textContent = payload.name;
+  document.getElementById('userAvatar').src = payload.picture;
+  document.getElementById('userInfo').style.display = 'flex';
+
+  // Exchange ID token for access token via OAuth2 implicit flow
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope: SCOPES,
+    prompt: 'consent',
+  });
+  const popup = window.open(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 'oauth', 'width=500,height=600');
+  const timer = setInterval(() => {
+    try {
+      const url = popup.location.href;
+      if (url.includes('access_token')) {
+        clearInterval(timer);
+        popup.close();
+        const hash = new URLSearchParams(popup.location.hash.substring(1));
+        accessToken = hash.get('access_token');
+        afterAuth();
+      }
+    } catch(e) {}
+    if (popup.closed) clearInterval(timer);
+  }, 500);
 }
 
-function checkOAuthCallback() {
-  const hash = window.location.hash;
-  if (hash.includes("access_token=")) {
-    const params = new URLSearchParams(hash.replace("#", "?").slice(1));
-    accessToken = params.get("access_token");
-    window.history.replaceState({}, "", window.location.pathname);
-    showAppOrSetup();
-    return true;
-  }
-  return false;
-}
-
-function showAppOrSetup() {
-  document.getElementById("auth-screen").style.display = "none";
-  const config = loadConfig();
-  if (!config || config.sheets.length === 0) {
-    showSetup();
+function afterAuth() {
+  document.getElementById('authScreen').style.display = 'none';
+  loadConfig();
+  const sheets = getSavedSheets();
+  if (sheets.length > 0) {
+    renderSetup();
+    loadAll();
   } else {
-    showApp();
-    loadAllSheets(config.sheets);
+    renderSetup();
+    document.getElementById('setupScreen').style.display = 'block';
   }
 }
 
-function signOut() { accessToken = null; location.reload(); }
-
-// ═══════════════════════════════════════
-//  SETUP
-// ═══════════════════════════════════════
-function showSetup() {
-  document.getElementById("setup-screen").style.display = "block";
-  document.getElementById("app").style.display = "none";
-  const config = loadConfig();
-  const existing = config ? config.sheets : [{ id: "", tab: "", name: "", headerRow: 1 }];
-  existing.forEach(s => addSheetEntry(s.id, s.tab, s.name, s.headerRow || 1));
+function signOut() {
+  accessToken = null;
+  allRows = [];
+  document.getElementById('userInfo').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
 }
 
-function openSetup() {
-  document.getElementById("sheet-entries").innerHTML = "";
-  showSetup();
+// ─────────────────────────────────────────────────────────
+// CONFIG PERSISTENCE
+// ─────────────────────────────────────────────────────────
+function getSavedSheets() {
+  try { return JSON.parse(localStorage.getItem('wh_sheets') || '[]'); } catch { return []; }
+}
+function saveSheets(arr) { localStorage.setItem('wh_sheets', JSON.stringify(arr)); }
+
+function loadConfig() { renderSetup(); }
+
+function exportConfig() {
+  const sheets = collectSheetEntries();
+  const blob = new Blob([JSON.stringify({ sheets }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'wh_tracker_config.json'; a.click();
+}
+function importConfigClick() { document.getElementById('importFile').click(); }
+function importConfig(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const cfg = JSON.parse(ev.target.result);
+      if (cfg.sheets) { saveSheets(cfg.sheets); renderSetup(); toast('Config imported!'); }
+    } catch { toast('Invalid config file'); }
+  };
+  reader.readAsText(file);
+}
+
+// ─────────────────────────────────────────────────────────
+// SETUP UI
+// ─────────────────────────────────────────────────────────
+function renderSetup() {
+  const sheets = getSavedSheets();
+  const list = document.getElementById('sheetList');
+  list.innerHTML = '';
+  if (sheets.length === 0) {
+    addSheetEntry(); return;
+  }
+  sheets.forEach((s, i) => addSheetEntry(s));
 }
 
 let entryCount = 0;
-function addSheetEntry(id, tab, name, headerRow) {
-  id = id || ""; tab = tab || ""; name = name || ""; headerRow = headerRow || 1;
-  entryCount++;
-  const n = entryCount;
-  const opt1 = headerRow == 1 ? " selected" : "";
-  const opt2 = headerRow == 2 ? " selected" : "";
-  const d = document.createElement("div");
-  d.className = "sheet-entry";
-  d.innerHTML = `
-    <div style="grid-column:1/-1; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:12px; font-weight:600; color:var(--muted); font-family:'DM Mono',monospace;">Sheet ${n}</span>
-      <button class="btn-remove" onclick="this.closest('.sheet-entry').remove()">×</button>
+function addSheetEntry(data = {}) {
+  const id = entryCount++;
+  const list = document.getElementById('sheetList');
+  const div = document.createElement('div');
+  div.className = 'sheet-entry';
+  div.dataset.id = id;
+  div.innerHTML = `
+    <div>
+      <label>WH Name (Dispatch WH)</label>
+      <input type="text" class="f-name" placeholder="e.g. Mumbai WH" value="${data.name||''}">
     </div>
     <div>
-      <label>Sheet ID (from URL)</label>
-      <input type="text" class="se-id" value="${id}" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUq…">
+      <label>Sheet ID</label>
+      <input type="text" class="f-sid" placeholder="Paste Google Sheet ID" value="${data.sheetId||''}">
     </div>
     <div>
-      <label>Tab name (exact)</label>
-      <input type="text" class="se-tab" value="${tab}" placeholder="WH Mumbai">
-    </div>
-    <div>
-      <label>Friendly name (optional)</label>
-      <input type="text" class="se-name" value="${name}" placeholder="e.g. Mumbai WH">
+      <label>Tab Name</label>
+      <input type="text" class="f-tab" placeholder="Sheet1" value="${data.tabName||'Sheet1'}">
     </div>
     <div>
       <label>Header row</label>
-      <select class="se-hrow" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;cursor:pointer;">
-        <option value="1"${opt1}>Row 1 — headers on first row</option>
-        <option value="2"${opt2}>Row 2 — row 1 is a title/merge row</option>
+      <select class="f-hrow">
+        <option value="1" ${(data.headerRow||1)==1?'selected':''}>Row 1</option>
+        <option value="2" ${(data.headerRow||1)==2?'selected':''}>Row 2</option>
       </select>
     </div>
+    <button class="btn-icon" onclick="this.closest('.sheet-entry').remove()" title="Remove">✕</button>
   `;
-  document.getElementById("sheet-entries").appendChild(d);
+  list.appendChild(div);
 }
 
-function saveAndLoad() {
-  const entries = document.querySelectorAll(".sheet-entry");
-  const sheets = [];
-  let valid = true;
-  entries.forEach(e => {
-    const id   = e.querySelector(".se-id").value.trim();
-    const tab  = e.querySelector(".se-tab").value.trim();
-    const name = e.querySelector(".se-name").value.trim();
-    const hrow = parseInt(e.querySelector(".se-hrow").value) || 1;
-    if (id && tab) sheets.push({ id, tab, name: name || tab, headerRow: hrow });
-    else if (id || tab) valid = false;
-  });
-  if (!valid) { showSetupError("Fill in both Sheet ID and Tab for each row, or remove incomplete rows."); return; }
-  if (sheets.length === 0) { showSetupError("Add at least one sheet."); return; }
-  saveConfig({ sheets });
-  document.getElementById("setup-error").style.display = "none";
-  showApp();
-  loadAllSheets(sheets);
+function collectSheetEntries() {
+  return [...document.querySelectorAll('.sheet-entry')].map(div => ({
+    name:      div.querySelector('.f-name').value.trim(),
+    sheetId:   div.querySelector('.f-sid').value.trim(),
+    tabName:   div.querySelector('.f-tab').value.trim() || 'Sheet1',
+    headerRow: parseInt(div.querySelector('.f-hrow').value) || 1,
+  })).filter(s => s.sheetId);
 }
 
-function showSetupError(msg) {
-  const el = document.getElementById("setup-error");
-  el.textContent = msg;
-  el.style.display = "block";
+function showSetup() {
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'block';
 }
 
-function saveConfig(c) { try { localStorage.setItem("wh_tracker_config", JSON.stringify(c)); } catch(e) {} }
-function loadConfig() { try { const s = localStorage.getItem("wh_tracker_config"); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
-
-// ═══════════════════════════════════════
-//  DATA LOADING
-// ═══════════════════════════════════════
-function showApp() {
-  document.getElementById("setup-screen").style.display = "none";
-  document.getElementById("app").style.display = "block";
-}
-
-async function loadAllSheets(sheets) {
-  showLoading(true);
-  clearError();
-  allRows = [];
-  const results = await Promise.allSettled(sheets.map(s => fetchSheet(s)));
-  results.forEach((r, i) => {
-    if (r.status === "fulfilled") allRows.push(...r.value);
-    else console.warn("Failed:", sheets[i].name, r.reason);
-  });
-
-  if (allRows.length === 0) {
-    showError("No data loaded. Check your Sheet IDs and tab names — they must match exactly.");
-    showLoading(false);
-    return;
-  }
-
-  populateFilters();
-  applyFilters();
-  const defaultTh = document.querySelector('th[data-col="gpDate"]');
-  if (defaultTh) { defaultTh.classList.add("sorted"); const ic = defaultTh.querySelector(".sort-icon"); if (ic) ic.textContent = "↓"; }
-  showLoading(false);
-  document.getElementById("last-refresh").textContent = "↺ " + new Date().toLocaleTimeString();
-  document.getElementById("sheet-tabs").textContent = sheets.map(s => s.name).join(" · ");
-}
-
-async function fetchSheet(sheet) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheet.id}/values/${encodeURIComponent(sheet.tab)}?valueRenderOption=FORMATTED_VALUE`;
-  const res = await fetch(url, { headers: { Authorization: "Bearer " + accessToken } });
-  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || `HTTP ${res.status}`); }
+// ─────────────────────────────────────────────────────────
+// FETCH SHEET DATA
+// ─────────────────────────────────────────────────────────
+async function fetchSheet(cfg) {
+  const { sheetId, tabName, headerRow, name: whName } = cfg;
+  const range = encodeURIComponent(`'${tabName}'`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Failed to fetch "${whName}": ${res.status} ${res.statusText}`);
   const data = await res.json();
-  const rows = data.values || [];
-  // headerRow is 1-based: 1 = headers on row 1, 2 = headers on row 2 (row 1 is title/merge)
-  const hIdx = (sheet.headerRow || 1) - 1; // convert to 0-based index
-  const minRows = hIdx + 2; // need at least header row + 1 data row
-  if (rows.length < minRows) return [];
+  const raw = data.values || [];
+  if (raw.length < headerRow) return [];
 
-  const rawHeaders = rows[hIdx];
-  const mappedKeys = rawHeaders.map(mapHeader);
+  const headers = raw[headerRow - 1];
+  const fieldMap = headers.map(h => mapHeader(h));
+  const dataRows = raw.slice(headerRow); // data starts after header row
 
-  return rows.slice(hIdx + 1).map((row, i) => {
-    const obj = { _whName: sheet.name, _rowIndex: i + hIdx + 2 };
-    mappedKeys.forEach((key, ci) => { obj[key] = row[ci] || ""; });
-
-    obj.channel        = obj.channel || sheet.name;
-    obj.gpDate         = normaliseDate(obj.gpDate);
-    obj.rtdDate        = normaliseDate(obj.rtdDate);
-    obj.dispatchDate   = normaliseDate(obj.dispatchDate);
-    obj.targetedPickup = normaliseDate(obj.targetedPickup);
-    obj.packingStatus  = normalisePackingStatus(obj.packingStatus);
-    obj.status         = normaliseStatus(obj.status);
-
+  return dataRows.map(row => {
+    const obj = { _wh: whName };
+    fieldMap.forEach((field, i) => {
+      if (field) obj[field] = (row[i] || '').trim();
+    });
+    obj.packingStatus = normPacking(obj.packingStatus);
+    obj.status        = normStatus(obj.status);
     return obj;
-  }).filter(r => r.poName || r.gpNo || r.channel);
+  }).filter(r => r.poName || r.gpNo || r.units); // skip empty rows
 }
 
-function refreshData() {
-  const config = loadConfig();
-  if (config) loadAllSheets(config.sheets);
+async function loadAll() {
+  const sheets = collectSheetEntries();
+  saveSheets(sheets);
+  if (sheets.length === 0) { toast('Add at least one warehouse sheet first.'); return; }
+
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('tableWrap').innerHTML = '<div class="loading"><div class="spinner"></div><br>Loading warehouse data…</div>';
+
+  allRows = [];
+  const errors = [];
+  for (const cfg of sheets) {
+    try {
+      const rows = await fetchSheet(cfg);
+      allRows.push(...rows);
+    } catch(e) { errors.push(e.message); }
+  }
+  if (errors.length) toast('⚠ ' + errors.join(' | '));
+
+  buildFilterOptions();
+  applyFilters();
 }
 
-// ═══════════════════════════════════════
-//  MULTI-SELECT
-// ═══════════════════════════════════════
-function buildMsOptions(key, values) {
-  const container = document.getElementById(`ms-${key}-opts`);
-  container.innerHTML = values.length === 0
-    ? `<div class="ms-empty">No options</div>`
-    : values.map(v => `
-      <div class="ms-option">
-        <input type="checkbox" id="ms-${key}-${safeid(v)}" value="${esc(v)}" onchange="onMsChange('${key}', this.value, this.checked)">
-        <label for="ms-${key}-${safeid(v)}">${esc(v)}</label>
-      </div>`).join("");
-  updateMsTrigger(key);
+// ─────────────────────────────────────────────────────────
+// FILTERS
+// ─────────────────────────────────────────────────────────
+let activeWH = 'All', activeChannel = 'All', activePacking = 'All', activeDispatch = 'All';
+
+function buildFilterOptions() {
+  buildChips('whChips',       [...new Set(allRows.map(r => r._wh))],          v => { activeWH = v; applyFilters(); }, () => activeWH);
+  buildChips('channelChips',  [...new Set(allRows.map(r => r.channel).filter(Boolean))], v => { activeChannel = v; applyFilters(); }, () => activeChannel);
+  buildChips('packingChips',  [...new Set(allRows.map(r => r.packingStatus).filter(Boolean))], v => { activePacking = v; applyFilters(); }, () => activePacking);
+  buildChips('dispatchChips', [...new Set(allRows.map(r => r.status).filter(Boolean))],  v => { activeDispatch = v; applyFilters(); }, () => activeDispatch);
 }
 
-function safeid(v) { return btoa(unescape(encodeURIComponent(v))).replace(/[^a-zA-Z0-9]/g, ""); }
-
-function filterMsOptions(key, query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll(`#ms-${key}-opts .ms-option`).forEach(el => {
-    el.style.display = el.querySelector("label").textContent.toLowerCase().includes(q) ? "" : "none";
+function buildChips(containerId, values, onClick, getActive) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  const all = document.createElement('button');
+  all.className = 'chip chip-all' + (getActive() === 'All' ? ' active' : '');
+  all.textContent = 'All';
+  all.onclick = () => { onClick('All'); buildChips(containerId, values, onClick, getActive); };
+  c.appendChild(all);
+  values.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (getActive() === v ? ' active' : '');
+    btn.textContent = v;
+    btn.title = v;
+    btn.onclick = () => { onClick(v); buildChips(containerId, values, onClick, getActive); };
+    c.appendChild(btn);
   });
-}
-
-function onMsChange(key, value, checked) {
-  if (checked) msState[key].add(value); else msState[key].delete(value);
-  updateMsTrigger(key);
-  applyFilters();
-}
-
-function selectAllMs(key) {
-  msState[key].clear();
-  document.querySelectorAll(`#ms-${key}-opts input[type=checkbox]`).forEach(cb => cb.checked = false);
-  updateMsTrigger(key);
-  applyFilters();
-}
-
-function clearMs(key) { selectAllMs(key); }
-
-function updateMsTrigger(key) {
-  const sel = msState[key];
-  const label = document.getElementById(`ms-${key}-label`);
-  const trigger = document.getElementById(`ms-${key}-trigger`);
-  const defaults = { channel: "All channels", pstatus: "All packing status", dstatus: "All dispatch status", loc: "All locations" };
-  if (sel.size === 0) {
-    label.innerHTML = defaults[key];
-    trigger.classList.remove("active");
-  } else {
-    const names = [...sel];
-    label.innerHTML = `${esc(names.length === 1 ? names[0] : `${names.length} selected`)} <span class="ms-count">${names.length}</span>`;
-    trigger.classList.add("active");
-  }
-}
-
-function toggleMs(key) {
-  const dd = document.getElementById(`ms-${key}-dd`);
-  const trigger = document.getElementById(`ms-${key}-trigger`);
-  const isOpen = dd.classList.contains("open");
-  document.querySelectorAll(".ms-dropdown").forEach(d => d.classList.remove("open"));
-  document.querySelectorAll(".ms-trigger").forEach(t => t.classList.remove("open"));
-  if (!isOpen) { dd.classList.add("open"); trigger.classList.add("open"); }
-}
-
-document.addEventListener("click", e => {
-  if (!e.target.closest(".ms-wrap")) {
-    document.querySelectorAll(".ms-dropdown").forEach(d => d.classList.remove("open"));
-    document.querySelectorAll(".ms-trigger").forEach(t => t.classList.remove("open"));
-  }
-});
-
-// ═══════════════════════════════════════
-//  FILTERS & TABLE
-// ═══════════════════════════════════════
-function populateFilters() {
-  const channels = [...new Set(allRows.map(r => r.channel).filter(Boolean))].sort();
-  const pstatuses = [...new Set(allRows.map(r => r.packingStatus).filter(Boolean))].sort();
-  const dstatuses = [...new Set(allRows.map(r => r.status).filter(Boolean))].sort();
-  const locations = [...new Set(allRows.map(r => r.location).filter(Boolean))].sort();
-
-  buildMsOptions("channel", channels);
-  buildMsOptions("pstatus", pstatuses);
-  buildMsOptions("dstatus", dstatuses);
-  buildMsOptions("loc", locations);
-}
-
-const today = new Date().toISOString().slice(0, 10);
-
-function isOverdue(row) {
-  if (!row.targetedPickup) return false;
-  const s = (row.status || "").toLowerCase();
-  if (s === "dispatched" || s === "delivered") return false;
-  return row.targetedPickup < today;
 }
 
 function applyFilters() {
-  const search  = document.getElementById("f-search").value.toLowerCase();
-  const gpFrom  = document.getElementById("f-gp-from").value;
-  const gpTo    = document.getElementById("f-gp-to").value;
-
-  const selChannels  = msState.channel;
-  const selPStatuses = new Set([...msState.pstatus].map(s => s.toLowerCase()));
-  const selDStatuses = new Set([...msState.dstatus].map(s => s.toLowerCase()));
-  const selLocs      = msState.loc;
+  const q     = document.getElementById('searchInput').value.toLowerCase();
+  const from  = document.getElementById('dateFrom').value;
+  const to    = document.getElementById('dateTo').value;
 
   filteredRows = allRows.filter(r => {
-    if (selChannels.size  > 0 && !selChannels.has(r.channel))  return false;
-    if (selPStatuses.size > 0 && !selPStatuses.has((r.packingStatus || "").toLowerCase())) return false;
-    if (selDStatuses.size > 0 && !selDStatuses.has((r.status || "").toLowerCase())) return false;
-    if (selLocs.size      > 0 && !selLocs.has(r.location))     return false;
-    if (gpFrom && r.gpDate && r.gpDate < gpFrom) return false;
-    if (gpTo   && r.gpDate && r.gpDate > gpTo)   return false;
-    if (search) {
-      const hay = [r.poName, r.emailSubject, r.gpNo, r.lr, r.channel, r.location, r.deliveryPartner, r.status, r.packingStatus].join(" ").toLowerCase();
-      if (!hay.includes(search)) return false;
+    if (activeWH       !== 'All' && r._wh          !== activeWH)       return false;
+    if (activeChannel  !== 'All' && r.channel       !== activeChannel)  return false;
+    if (activePacking  !== 'All' && r.packingStatus !== activePacking)  return false;
+    if (activeDispatch !== 'All' && r.status        !== activeDispatch) return false;
+    if (q) {
+      const haystack = [r.poName, r.lr, r.gpNo, r.emailSubject, r.channel, r._wh].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    if (from || to) {
+      const d = parseDate(r.gpReceivedOn);
+      if (d) {
+        if (from && d < new Date(from)) return false;
+        if (to   && d > new Date(to + 'T23:59:59')) return false;
+      }
     }
     return true;
   });
 
-  sortRows();
-  currentPage = 1;
+  if (sortCol) {
+    filteredRows.sort((a, b) => {
+      let av = a[sortCol] || '', bv = b[sortCol] || '';
+      const ad = parseDate(av), bd = parseDate(bv);
+      if (ad && bd) return sortDir * (ad - bd);
+      return sortDir * av.localeCompare(bv);
+    });
+  }
+
+  renderStats();
   renderTable();
-  updateStats();
+  document.getElementById('rowCount').textContent = `${filteredRows.length} rows`;
+
+  // Rebuild filter chips to keep active states in sync
+  buildFilterOptions();
 }
 
 function clearFilters() {
-  ["f-search","f-gp-from","f-gp-to"].forEach(id => document.getElementById(id).value = "");
-  ["channel","pstatus","dstatus","loc"].forEach(key => {
-    msState[key].clear();
-    document.querySelectorAll(`#ms-${key}-opts input[type=checkbox]`).forEach(cb => cb.checked = false);
-    updateMsTrigger(key);
-  });
+  activeWH = activeChannel = activePacking = activeDispatch = 'All';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
   applyFilters();
 }
 
-function sortBy(col) {
-  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
-  document.querySelectorAll("th").forEach(th => { th.classList.remove("sorted"); const ic = th.querySelector(".sort-icon"); if (ic) ic.textContent = "↕"; });
-  const th = document.querySelector(`th[data-col="${col}"]`);
-  if (th) { th.classList.add("sorted"); const ic = th.querySelector(".sort-icon"); if (ic) ic.textContent = sortDir === -1 ? "↓" : "↑"; }
-  sortRows();
-  renderTable();
+// ─────────────────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────────────────
+function renderStats() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const pending  = filteredRows.filter(r => r.packingStatus === 'Pending' || r.packingStatus === '').length;
+  const rtd      = filteredRows.filter(r => r.packingStatus === 'Packed' || r.status === 'RTD').length;
+  const dispatched = filteredRows.filter(r => r.status === 'Dispatched').length;
+  const overdue  = filteredRows.filter(r => {
+    const d = parseDate(r.targetedPickupDate);
+    return d && d < today && r.status !== 'Dispatched';
+  }).length;
+  const totalUnits = filteredRows.reduce((s, r) => s + (parseInt(r.units) || 0), 0);
+  const totalBoxes = filteredRows.reduce((s, r) => s + (parseInt(r.boxes) || 0), 0);
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="label">Total POs</div>
+      <div class="value">${filteredRows.length}</div>
+      <div class="sub">${totalUnits.toLocaleString()} units</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="label">Pending Packing</div>
+      <div class="value">${pending}</div>
+      <div class="sub">not yet packed</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="label">Packed / RTD</div>
+      <div class="value">${rtd}</div>
+      <div class="sub">ready to dispatch</div>
+    </div>
+    <div class="stat-card green">
+      <div class="label">Dispatched</div>
+      <div class="value">${dispatched}</div>
+      <div class="sub">${totalBoxes.toLocaleString()} boxes</div>
+    </div>
+    <div class="stat-card red">
+      <div class="label">Overdue Pickups</div>
+      <div class="value">${overdue}</div>
+      <div class="sub">past target date</div>
+    </div>
+  `;
 }
 
-const DATE_COLS = new Set(["gpDate","rtdDate","dispatchDate","targetedPickup"]);
-
-function sortRows() {
-  filteredRows.sort((a, b) => {
-    let av = a[sortCol] || "", bv = b[sortCol] || "";
-    if (DATE_COLS.has(sortCol)) {
-      if (!av && !bv) return 0; if (!av) return 1; if (!bv) return -1;
-      return sortDir * av.localeCompare(bv);
-    }
-    if (!isNaN(parseFloat(av)) && !isNaN(parseFloat(bv))) return sortDir * (parseFloat(av) - parseFloat(bv));
-    return sortDir * String(av).localeCompare(String(bv));
-  });
-}
-
-function packingBadge(s) {
-  const v = (s || "").toLowerCase();
-  if (v === "packed")      return "badge-packed";
-  if (v === "in progress") return "badge-inprogress";
-  if (v === "pending")     return "badge-pending";
-  if (v === "hold")        return "badge-hold";
-  return "badge-default";
-}
-
-function statusBadge(s) {
-  const v = (s || "").toLowerCase();
-  if (v === "dispatched")       return "badge-dispatched";
-  if (v === "dispatch pending") return "badge-pending";
-  if (v === "rtd")              return "badge-packed";
-  if (v === "hold")             return "badge-hold";
-  if (v === "rto")              return "badge-rto";
-  if (v === "delivered")        return "badge-packed";
-  if (v === "pending")          return "badge-pending";
-  return "badge-default";
-}
-
-function displayDate(d) {
-  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d || "";
-  const [y, m, day] = d.split("-");
-  return `${day}-${m}-${y}`;
-}
+// ─────────────────────────────────────────────────────────
+// TABLE
+// ─────────────────────────────────────────────────────────
+const COLS = [
+  { field: '_wh',              label: 'Dispatch WH',     cls: 'wh-col' },
+  { field: 'channel',          label: 'Channel' },
+  { field: 'emailSubject',     label: 'Email Subject' },
+  { field: 'poName',           label: 'PO Name' },
+  { field: 'gpReceivedOn',     label: 'GP Received' },
+  { field: 'units',            label: 'Units',           align: 'right' },
+  { field: 'targetedPickupDate', label: 'Target Pickup' },
+  { field: 'packingStatus',    label: 'Packing Status',  badge: 'packing' },
+  { field: 'status',           label: 'Status',          badge: 'dispatch' },
+  { field: 'rtdDate',          label: 'RTD Date' },
+  { field: 'dispatchDate',     label: 'Dispatch Date' },
+  { field: 'packedQty',        label: 'Packed Qty',      align: 'right' },
+  { field: 'boxes',            label: 'Boxes',           align: 'right' },
+  { field: 'deliveryPartner',  label: 'Delivery Partner' },
+  { field: 'lr',               label: 'LR / Tracking' },
+];
 
 function renderTable() {
-  const tbody = document.getElementById("wh-tbody");
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const page  = filteredRows.slice(start, start + PAGE_SIZE);
-
-  if (page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="16" class="center-msg">No rows match your filters.</td></tr>`;
-    document.getElementById("row-count").textContent = "0 rows";
-    renderPagination();
+  if (filteredRows.length === 0) {
+    document.getElementById('tableWrap').innerHTML = '<div class="empty">😶 No rows match the current filters.</div>';
     return;
   }
+  const today = new Date(); today.setHours(0,0,0,0);
 
-  document.getElementById("row-count").textContent = filteredRows.length.toLocaleString() + " rows";
+  const thead = COLS.map(c => {
+    const cls = sortCol === c.field ? (sortDir === 1 ? 'sort-asc' : 'sort-desc') : '';
+    return `<th class="${cls}" onclick="sortBy('${c.field}')">${c.label}</th>`;
+  }).join('');
 
-  tbody.innerHTML = page.map((r, i) => {
-    const over = isOverdue(r);
-    const hasPriority = !!(r.priority && r.priority.trim());
-    return `<tr class="${over ? "overdue" : hasPriority ? "priority" : ""}" onclick="showDetail(${start + i})" style="cursor:pointer;">
-      <td><span class="channel-pill">${esc(r.channel)}</span></td>
-      <td>${esc(r.location)}</td>
-      <td style="font-weight:600; font-family:'DM Mono',monospace;">${esc(r.poName)}</td>
-      <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.emailSubject)}">${esc(r.emailSubject)}</td>
-      <td>${esc(displayDate(r.gpDate))}</td>
-      <td style="font-family:'DM Mono',monospace; font-size:12px;">${esc(r.gpNo)}</td>
-      <td style="font-weight:500;">${esc(r.units)}</td>
-      <td style="${over ? "color:var(--red); font-weight:600;" : ""}">${esc(displayDate(r.targetedPickup))}</td>
-      <td><span class="badge ${packingBadge(r.packingStatus)}">${esc(r.packingStatus || "—")}</span></td>
-      <td><span class="badge ${statusBadge(r.status)}">${esc(r.status || "—")}</span></td>
-      <td>${esc(displayDate(r.rtdDate))}</td>
-      <td>${esc(displayDate(r.dispatchDate))}</td>
-      <td>${esc(r.packedQty)}</td>
-      <td>${esc(r.boxes)}</td>
-      <td>${esc(r.deliveryPartner)}</td>
-      <td style="font-family:'DM Mono',monospace; font-size:12px;">${esc(r.lr)}</td>
-    </tr>`;
-  }).join("");
+  const tbody = filteredRows.map(row => {
+    const td = parseDate(row.targetedPickupDate);
+    const isOverdue  = td && td < today && row.status !== 'Dispatched';
+    const isPriority = row.priority && row.priority.trim() !== '';
+    const trClass    = isOverdue ? 'overdue' : isPriority ? 'priority' : '';
 
-  renderPagination();
+    const cells = COLS.map(c => {
+      let v = row[c.field] || '';
+      if (c.badge === 'packing')  v = packBadge(v);
+      else if (c.badge === 'dispatch') v = statusBadge(v);
+      const style = c.align === 'right' ? ' style="text-align:right"' : '';
+      return `<td class="${c.cls||''}"${style}>${v}</td>`;
+    }).join('');
+
+    return `<tr class="${trClass}">${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('tableWrap').innerHTML = `
+    <table>
+      <thead><tr>${thead}</tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>
+  `;
 }
 
-function esc(s) { return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function sortBy(field) {
+  if (sortCol === field) sortDir *= -1;
+  else { sortCol = field; sortDir = 1; }
+  applyFilters();
+}
 
-function renderPagination() {
-  const total = filteredRows.length;
-  const pages = Math.ceil(total / PAGE_SIZE);
-  document.getElementById("page-info").textContent = `Page ${currentPage} of ${pages || 1} (${total.toLocaleString()} rows)`;
-  const btns = document.getElementById("page-btns");
-  if (pages <= 1) { btns.innerHTML = ""; return; }
-  let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
-  for (let p = Math.max(1, currentPage - 2); p <= Math.min(pages, currentPage + 2); p++) {
-    html += `<button class="page-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
+// ─────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────
+function parseDate(str) {
+  if (!str) return null;
+  // Try DD/MM/YYYY and DD-MM-YYYY
+  const m1 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m1) {
+    const y = m1[3].length === 2 ? '20' + m1[3] : m1[3];
+    return new Date(`${y}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`);
   }
-  html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? "disabled" : ""}>›</button>`;
-  btns.innerHTML = html;
+  // Try native parse
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
 }
 
-function goPage(p) {
-  const pages = Math.ceil(filteredRows.length / PAGE_SIZE);
-  currentPage = Math.max(1, Math.min(pages, p));
-  renderTable();
-}
-
-// ═══════════════════════════════════════
-//  STATS
-// ═══════════════════════════════════════
-function updateStats() {
-  const rows       = filteredRows;
-  const total      = rows.length;
-  const pending    = rows.filter(r => { const s = (r.packingStatus || "").toLowerCase(); return s === "pending" || s === ""; }).length;
-  const packed     = rows.filter(r => (r.packingStatus || "").toLowerCase() === "packed").length;
-  const dispatched = rows.filter(r => { const s = (r.status || "").toLowerCase(); return s === "dispatched" || s === "delivered"; }).length;
-  const overdue    = rows.filter(isOverdue).length;
-
-  const totalUnits  = rows.reduce((acc, r) => acc + (parseFloat(r.units) || 0), 0);
-  const totalBoxes  = rows.reduce((acc, r) => acc + (parseFloat(r.boxes) || 0), 0);
-
-  document.getElementById("s-total").textContent      = total.toLocaleString();
-  document.getElementById("s-total-sub").textContent  = totalUnits > 0 ? `${totalUnits.toLocaleString()} units` : " ";
-  document.getElementById("s-pending").textContent    = pending.toLocaleString();
-  document.getElementById("s-pending-sub").textContent = "not yet packed";
-  document.getElementById("s-packed").textContent     = packed.toLocaleString();
-  document.getElementById("s-packed-sub").textContent = "ready to dispatch";
-  document.getElementById("s-dispatched").textContent = dispatched.toLocaleString();
-  document.getElementById("s-dispatched-sub").textContent = totalBoxes > 0 ? `${totalBoxes.toLocaleString()} boxes` : " ";
-  document.getElementById("s-overdue").textContent    = overdue.toLocaleString();
-}
-
-// ═══════════════════════════════════════
-//  DETAIL MODAL
-// ═══════════════════════════════════════
-function showDetail(idx) {
-  const r = filteredRows[idx];
-  if (!r) return;
-  document.getElementById("modal-po-name").textContent = r.poName || r.gpNo || "Row Details";
-  const fields = [
-    ["Channel",          r.channel],
-    ["Location",         r.location],
-    ["PO Name",          r.poName],
-    ["Email Subject",    r.emailSubject],
-    ["GP No",            r.gpNo],
-    ["GP Type",          r.gpType],
-    ["GP Received",      displayDate(r.gpDate)],
-    ["Priority",         r.priority],
-    ["Units",            r.units],
-    ["Barcoding Qty",    r.barcodingQty],
-    ["Combo Set Qty",    r.comboQty],
-    ["Targeted Pickup",  displayDate(r.targetedPickup)],
-    ["Packing Status",   r.packingStatus],
-    ["Status",           r.status],
-    ["RTD Date",         displayDate(r.rtdDate)],
-    ["Dispatch Date",    displayDate(r.dispatchDate)],
-    ["Packed/Disp Qty",  r.packedQty],
-    ["Boxes",            r.boxes],
-    ["Delivery Partner", r.deliveryPartner],
-    ["LR / Docket",      r.lr],
-    ["Start Time",       r.startTime],
-    ["End Time",         r.endTime],
-    ["Remarks",          r.remarks],
-  ];
-  document.getElementById("modal-body").innerHTML = fields
-    .filter(([, v]) => v)
-    .map(([l, v]) => `<div class="modal-field"><div class="mf-label">${l}</div><div class="mf-value">${esc(v)}</div></div>`)
-    .join("");
-  document.getElementById("detail-modal").classList.add("open");
-}
-
-function closeModal(e) {
-  if (e.target === document.getElementById("detail-modal"))
-    document.getElementById("detail-modal").classList.remove("open");
-}
-
-// ═══════════════════════════════════════
-//  EXPORT
-// ═══════════════════════════════════════
-function exportCSV() {
-  const cols = ["channel","location","poName","emailSubject","gpDate","gpNo","gpType","units","targetedPickup","priority","packingStatus","status","rtdDate","dispatchDate","packedQty","boxes","deliveryPartner","lr","remarks"];
-  const dateFields = new Set(["gpDate","rtdDate","dispatchDate","targetedPickup"]);
-  const header = cols.join(",");
-  const rowsData = filteredRows.map(r => cols.map(c => {
-    const v = dateFields.has(c) ? displayDate(r[c] || "") : (r[c] || "");
-    return `"${v.replace(/"/g,'""')}"`;
-  }).join(","));
-  const csv  = [header, ...rowsData].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a    = document.createElement("a");
-  a.href     = URL.createObjectURL(blob);
-  a.download = "WH_Export_" + new Date().toISOString().slice(0, 10) + ".csv";
-  a.click();
-}
-
-// ═══════════════════════════════════════
-//  DATE NORMALISATION
-// ═══════════════════════════════════════
-function normaliseDate(d) {
-  if (!d || typeof d !== "string") return "";
-  d = d.trim();
-  if (!d) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-
-  function iso(day, mon, yr) {
-    const y = yr.length === 2 ? (parseInt(yr) > 50 ? "19" + yr : "20" + yr) : yr;
-    return `${y}-${mon.padStart(2,"0")}-${day.padStart(2,"0")}`;
-  }
-  let m;
-  m = d.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if (m) return iso(m[1], m[2], m[3]);
-
-  const p = new Date(d);
-  if (!isNaN(p)) return p.toISOString().slice(0, 10);
-  return d;
-}
-
-function showLoading(on) { document.getElementById("loading-bar").style.display = on ? "block" : "none"; }
-function showError(msg)  { const e = document.getElementById("app-error"); e.textContent = msg; e.style.display = "block"; }
-function clearError()    { document.getElementById("app-error").style.display = "none"; }
-
-// ═══════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════
-if (!checkOAuthCallback()) {
-  // GSI button renders automatically
+function toast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', duration);
 }
 </script>
 </body>
