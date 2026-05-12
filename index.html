@@ -888,13 +888,14 @@ async function fetchSheet(sheet) {
   if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error?.message || `HTTP ${res.status}`); }
   const data = await res.json();
   const rows = data.values || [];
-  if (rows.length < 2) return [];
+  // Row 1 (index 0) = title/merged row, Row 2 (index 1) = actual headers, Row 3+ = data
+  if (rows.length < 3) return [];
 
-  const rawHeaders = rows[0];
+  const rawHeaders = rows[1]; // ← row 2 is the header row
   const mappedKeys = rawHeaders.map(mapHeader);
 
-  return rows.slice(1).map((row, i) => {
-    const obj = { _whName: sheet.name, _rowIndex: i + 2 };
+  return rows.slice(2).map((row, i) => { // ← data starts from row 3
+    const obj = { _whName: sheet.name, _rowIndex: i + 3 };
     mappedKeys.forEach((key, ci) => { obj[key] = row[ci] || ""; });
 
     obj.channel        = obj.channel || sheet.name;
